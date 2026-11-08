@@ -2,7 +2,7 @@
   "name": "ganfan-video",
   "private": true,
   "version": "1.0.0",
-  "description": "干饭决策机 · 123s 七幕演示视频（Remotion 混合管线）",
+  "description": "干饭决策机 · 122s 七幕演示视频（Remotion 混合管线）",
   "scripts": {
     "dev": "remotion studio",
     "render": "remotion render GanFan out/ganfan.mp4",

@@ -79,7 +79,7 @@ export const S3Serve: React.FC = () => {
       <AbsoluteFill style={{ background: 'linear-gradient(150deg,#3A1E0E,#201006)' }}>
         {/* AI 食欲图接入：总结镜头底改用 AI 餐盘俯拍（蒸汽暖光与全片一致，blur+压暗罩保字幕可读） */}
         <PhotoBg src="assets/photos/GEN_S3_餐盘俯拍.jpg" frame={lf} dim={0.75} blur={4} />
-        {/* AI B-roll 插槽 S3_SUM（约 40.3–49s 总结镜头底）：Sequence from 归零视频起点 */}
+        {/* AI B-roll 插槽 S3_SUM（约 39.1–48.2s 总结镜头底）：Sequence from 归零视频起点 */}
         {genHas('S3_SUM') && (
           <Sequence from={S3_SUM} layout="none">
             <GenBroll slot="S3_SUM" overlay={0.55} />

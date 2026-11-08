@@ -1,4 +1,4 @@
-// stills.mjs —— 一次打包，批量抽帧生成审片剧照表（123s 时间轴，共 3690 帧）
+// stills.mjs —— 一次打包，批量抽帧生成审片剧照表（122.2s 时间轴，共 3666 帧）
 // 用法: node scripts/stills.mjs   （渲染授权门前置：给用户审剧照；可传过滤词如 node scripts/stills.mjs S4 S6）
 // 幕起止自动读 narration.json；帧号 = 幕起点 + 表内偏移秒，不再手写绝对帧
 import { bundle } from '@remotion/bundler';

@@ -31,15 +31,18 @@ const S7CarouselForPreview: React.FC = () => {
   return <S7CarouselView frame={f} s7Frame={6 * 30 + f} genFrom={0} />;
 };
 
-/** A/B 预览（15s，无声）：S1 全段 0–12s + S7 轮播段 3s。
+/** A/B 预览（无声）：S1 全段（0–11.2s，帧数随 narration 幕长同步）+ S7 轮播段 3s。
  *  供 AI B-roll 素材放入前后对比：`npx remotion render src/index.ts ABPreview out/ab.mp4` */
+const S1_SC = NARR.find((sc) => sc.id === 'S1')!;
+export const AB_S1 = sec(S1_SC.end - S1_SC.start);
+export const AB_S7 = sec(3);
 export const ABPreview: React.FC = () => (
   <AbsoluteFill style={{ background: '#1A0C04' }}>
     <Series>
-      <Series.Sequence durationInFrames={sec(12)}>
+      <Series.Sequence durationInFrames={AB_S1}>
         <S1Pain />
       </Series.Sequence>
-      <Series.Sequence durationInFrames={sec(3)}>
+      <Series.Sequence durationInFrames={AB_S7}>
         <S7CarouselForPreview />
       </Series.Sequence>
     </Series>

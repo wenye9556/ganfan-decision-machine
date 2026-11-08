@@ -24,7 +24,7 @@ const S6_CARDS: { icon: string; title: string; lines: string[]; nums: [number | 
   {
     icon: '🏫', title: '对食堂后勤',
     lines: ['哪些窗口排长队', '哪些菜总卖完，有了能看的数据'],
-    nums: [[26, '个窗口'], [719, '道菜']],
+    nums: [[26, '个窗口'], ['一整座', '食堂的菜']],  // 不复述 S5 数据墙的 719，改为口语化量词
   },
   {
     icon: '🏢', title: '对企业团餐',
@@ -43,7 +43,7 @@ export const S6Value: React.FC = () => {
       { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
   return (
     <AbsoluteFill style={{ background: 'linear-gradient(155deg,#311C0D,#1A0D04)' }}>
-      {/* AI B-roll 插槽 S6_BG（约 84.5–103s 全段底层循环 B-roll）：manifest 声明即换视频底
+      {/* AI B-roll 插槽 S6_BG（约 83.7–102.2s 全段底层循环 B-roll）：manifest 声明即换视频底
        *  （压暗罩加厚至 0.8，保证三张前景卡可读），空 manifest 时保持现有实拍 Ken Burns 轮换 */}
       {genHas('S6_BG') ? (
         <GenBroll slot="S6_BG" overlay={0.8} />
@@ -101,14 +101,15 @@ export const S6Value: React.FC = () => {
                   const num = typeof v === 'number'
                     ? Math.round(interpolate(f, [n0, n0 + 30], [0, v], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }))
                     : v;
+                  const wordy = typeof v === 'string' && v.length > 1;  // 文字量词（如「一整座」）收小一号，整枚胶囊收进 440px 卡内宽
                   return (
                     <div key={j} style={{
-                      display: 'flex', alignItems: 'baseline', gap: 8,
+                      display: 'flex', alignItems: 'baseline', gap: 8, whiteSpace: 'nowrap', flexShrink: 0,
                       background: 'rgba(255,178,94,.12)', border: '1.5px solid rgba(255,178,94,.45)',
                       borderRadius: 16, padding: '10px 18px',
                       transform: `scale(${pop(f, 30, n0)})`,
                     }}>
-                      <span style={{ fontFamily: FONT, fontSize: 40, fontWeight: 900, color: C.orange }}>{num}</span>
+                      <span style={{ fontFamily: FONT, fontSize: wordy ? 32 : 40, fontWeight: 900, color: C.orange }}>{num}</span>
                       <span style={{ fontFamily: FONT, fontSize: 25, color: C.soft }}>{lab}</span>
                     </div>
                   );
@@ -135,7 +136,7 @@ export const S7CarouselView: React.FC<{ frame: number; s7Frame: number; genFrom:
   const idx = Math.min(3, Math.floor(t / 2));
   return (
     <AbsoluteFill>
-      {/* AI B-roll 插槽 S7_CAROUSEL（109–117s 轮播段底）：声明即整段视频，否则四张实拍轮播 */
+      {/* AI B-roll 插槽 S7_CAROUSEL（108.2–116.2s 轮播段底）：声明即整段视频，否则四张实拍轮播 */
       genHas('S7_CAROUSEL') ? (
         <Sequence from={genFrom} durationInFrames={8 * 30} layout="none">
           <GenBroll slot="S7_CAROUSEL" overlay={0.3} />

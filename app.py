@@ -310,9 +310,12 @@ with tab_meal:
                     unsafe_allow_html=True)
     if res is not None:
         if meta:
-            st.markdown('<div class="solve-meta">'
-                        + ('⚡ 缓存命中 <0.1s' if meta['hit'] else f"⏱️ 实时求解 {meta['elapsed']}s")
-                        + f" · {res.get('alive', 0)} 道菜符合你的条件</div>", unsafe_allow_html=True)
+            # 数字精简：主视觉只留「N 道菜符合你的条件」；缓存命中/耗时收纳进 ⓘ 悬停小字
+            detail = '缓存命中 <0.1s' if meta['hit'] else f"实时求解 {meta['elapsed']}s"
+            st.markdown(
+                f'<div class="solve-meta"><b>{res.get("alive", 0)} 道菜符合你的条件</b>'
+                f'<span class="meta-info" title="{html.escape(detail)}">ⓘ</span></div>',
+                unsafe_allow_html=True)
         if st.session_state.get('rand_note'):
             st.markdown(H.hint_html(f'🎲 本次随机条件：{st.session_state.rand_note} —— 想换就点下方「再换一批」'),
                         unsafe_allow_html=True)

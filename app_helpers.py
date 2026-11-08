@@ -429,11 +429,16 @@ div[data-testid="stCaptionContainer"]{ color:#A8917B; }
 .chips-src{ margin-top:7px; font-size:10px; color:#B7A08B; }
 
 /* ================= solve meta ================= */
+/* 数字精简：主视觉只留「N 道菜符合你的条件」一句（加大加粗），
+   缓存命中/耗时等实现细节收纳进 ⓘ 悬停小字（移动端点按也能借 title 提示露出） */
 .solve-meta{
-  display:inline-flex; align-items:center; gap:5px;
-  font-size:10.5px; color:#A08770; background:#FBF4E9;
-  border:1px solid #F3E4D2; border-radius:20px; padding:4px 10px;
-  margin:2px 0 2px; line-height:1.5;
+  display:inline-flex; align-items:center; gap:7px;
+  font-size:14px; font-weight:800; color:#5C4432; background:#FBF4E9;
+  border:1px solid #F3E4D2; border-radius:20px; padding:7px 14px;
+  margin:2px 0 4px; line-height:1.5;
+}
+.solve-meta .meta-info{
+  font-size:11px; font-weight:700; color:#B99B7D; cursor:help; user-select:none;
 }
 
 /* ================= empty state ================= */

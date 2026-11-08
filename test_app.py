@@ -142,6 +142,16 @@ def run_checks():
     assert res and len(res['top3']) == 3, 'Top3 未产出'
     assert not sget(at, 'rand_note'), 'NL 路径不应有随机条件明示'
     first_sigs = top3_sigs(at)
+    # 数字精简：结果区 meta 主视觉只留「N 道菜符合你的条件」，实现细节收纳进 ⓘ 悬停（title 属性）
+    md_now = ''.join(m.value for m in at.markdown)
+    meta_html = next(m.value for m in at.markdown if m.value.lstrip().startswith('<div class="solve-meta"'))
+    import re as _re
+    meta_body = _re.sub(r'title="[^"]*"', '', meta_html)      # title 悬停属性不算正文
+    # hint 提示条里的「缓存命中秒出」是引导文案（非 meta 行），不在本断言范围
+    assert '道菜符合你的条件' in meta_body, '主视觉应保留「N 道菜符合你的条件」一句'
+    assert 'meta-info' in meta_html and 'ⓘ' in meta_html, '缓存命中/耗时应收纳为 ⓘ 小字（title 悬停）'
+    assert '缓存命中' in meta_html or '实时求解' in meta_html, 'ⓘ 悬停里应带缓存命中/耗时细节'
+    assert '缓存命中' not in meta_body and '实时求解' not in meta_body, 'meta 实现细节不应出现在正文'
     print('NL→Top3 ✓', [round(p['PI'], 2) for p in res['top3']], 'meta=', at.session_state.meta)
 
     # ---- 同句二连击：面板未脏 → 按上次解析条件确定性重解，结果一致、rand_note 为空 ----
