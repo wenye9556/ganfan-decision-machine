@@ -1,0 +1,15 @@
+video/node_modules/
+video/out/
+__pycache__/
+*.pyc
+data/checkins.json
+*_backup_*.xlsx
+engine/*.bak_*
+bp/review_*.png
+*.tmp
+
+.venv/
+tmp_ui/
+
+cache/plans.json.bak_*
+video/public/assets/gen/*.mp4

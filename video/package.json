@@ -1,0 +1,22 @@
+{
+  "name": "ganfan-video",
+  "private": true,
+  "version": "1.0.0",
+  "description": "干饭决策机 · 123s 七幕演示视频（Remotion 混合管线）",
+  "scripts": {
+    "dev": "remotion studio",
+    "render": "remotion render GanFan out/ganfan.mp4",
+    "stills": "node scripts/stills.mjs"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "@remotion/captions": "^4.0.0",
+    "remotion": "^4.0.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.3",
+    "typescript": "5.4.5"
+  }
+}

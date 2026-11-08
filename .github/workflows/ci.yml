@@ -1,0 +1,20 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  engine-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: NL 解析回归（48 句）
+        run: PYTHONIOENCODING=utf-8 python engine/test_nl.py
+      - name: 引擎断言电池（17 类 + 确定性）
+        run: PYTHONIOENCODING=utf-8 python engine/run_master.py

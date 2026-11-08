@@ -1,0 +1,290 @@
+[
+ {
+  "name": "卤炒香干饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 11,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "麻辣肉肠饭",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "孜然酥肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "藤椒贝贝鸡饭",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "武汉黑鸭饭",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "麻辣翅根饭",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "巴掌大鸡腿饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "金牌猪脚饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "椒麻鸡肉饭",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "超级卤肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "超级炒卤肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "地道卤酱肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "孜然卤爆鸭饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "卤鸡蛋",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 1.5,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "卤莲藕",
+  "cat": "素菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 2,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "卤海带",
+  "cat": "素菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 2,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "卤干子",
+  "cat": "素菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 3,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "卤鹌鹑蛋",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 2,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "卤鸭腿",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 8,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "莲藕饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 8,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "招牌牛肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "黑椒牛肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "番茄牛肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "至尊肥牛饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "萝卜牛杂饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "战斧鸭腿饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "湘味小炒肉饭",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 14.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "黑金烤肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "新疆大盘鸡饭",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 13.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "可乐鸡",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 13.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "黑椒鸡扒饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 13.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "香辣大鸡排饭",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 13.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "泰汁鸡丁饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 13.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "咖喱鸡块饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 13,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "香酥烤肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 12.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "法式烤排",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 12.8,
+  "window": "牛东家牛肉饭"
+ }
+]

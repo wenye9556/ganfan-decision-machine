@@ -1,0 +1,4 @@
+streamlit>=1.44
+pulp>=2.7,<4
+openpyxl>=3.1
+pyyaml>=6

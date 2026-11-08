@@ -1,0 +1,46 @@
+{
+ "n": 11,
+ "normal": 9,
+ "cheat": 2,
+ "cheat_left": 1,
+ "rate": 82,
+ "cost": 168.5,
+ "days": [
+  {
+   "weekday": "一",
+   "n": 2,
+   "kcal": 1350
+  },
+  {
+   "weekday": "二",
+   "n": 2,
+   "kcal": 1420
+  },
+  {
+   "weekday": "三",
+   "n": 1,
+   "kcal": 640
+  },
+  {
+   "weekday": "四",
+   "n": 2,
+   "kcal": 1510
+  },
+  {
+   "weekday": "五",
+   "n": 2,
+   "kcal": 1380
+  },
+  {
+   "weekday": "六",
+   "n": 1,
+   "kcal": 720
+  },
+  {
+   "weekday": "日",
+   "n": 1,
+   "kcal": 590
+  }
+ ],
+ "demo": true
+}

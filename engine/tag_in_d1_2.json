@@ -1,0 +1,290 @@
+[
+ {
+  "name": "海苔碎烤肠饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 11,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "肉末茄子饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 10.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "重庆小面（素）(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 7,
+  "window": "重庆小面"
+ },
+ {
+  "name": "重庆小面（素）(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 8,
+  "window": "重庆小面"
+ },
+ {
+  "name": "贵州米粉（素）(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 7,
+  "window": "重庆小面"
+ },
+ {
+  "name": "贵州米粉（素）(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 8,
+  "window": "重庆小面"
+ },
+ {
+  "name": "番茄鸡蛋面/粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 9,
+  "window": "重庆小面"
+ },
+ {
+  "name": "番茄鸡蛋面/粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 11,
+  "window": "重庆小面"
+ },
+ {
+  "name": "豌豆杂酱面/粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 10,
+  "window": "重庆小面"
+ },
+ {
+  "name": "豌豆杂酱面/粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "重庆小面"
+ },
+ {
+  "name": "酸菜肉丝面/粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 10,
+  "window": "重庆小面"
+ },
+ {
+  "name": "酸菜肉丝面/粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "重庆小面"
+ },
+ {
+  "name": "土豆泥炸酱面/粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 10,
+  "window": "重庆小面"
+ },
+ {
+  "name": "土豆泥炸酱面/粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "重庆小面"
+ },
+ {
+  "name": "豌豆杂酱酸辣粉(小份)",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "重庆小面"
+ },
+ {
+  "name": "豌豆杂酱酸辣粉(大份)",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "重庆小面"
+ },
+ {
+  "name": "鸡杂面/粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "重庆小面"
+ },
+ {
+  "name": "鸡杂面/粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "重庆小面"
+ },
+ {
+  "name": "红烧排骨面/粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "重庆小面"
+ },
+ {
+  "name": "红烧排骨面/粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "重庆小面"
+ },
+ {
+  "name": "红烧牛肉面/粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "重庆小面"
+ },
+ {
+  "name": "红烧牛肉面/粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 16,
+  "window": "重庆小面"
+ },
+ {
+  "name": "贵州羊杂米粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "重庆小面"
+ },
+ {
+  "name": "贵州羊杂米粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 16,
+  "window": "重庆小面"
+ },
+ {
+  "name": "贵州特色羊肉米粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "重庆小面"
+ },
+ {
+  "name": "贵州特色羊肉米粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 16,
+  "window": "重庆小面"
+ },
+ {
+  "name": "鸡丝拌面",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 10,
+  "window": "重庆小面"
+ },
+ {
+  "name": "老麻抄手(小份)",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "重庆小面"
+ },
+ {
+  "name": "老麻抄手(大份)",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "重庆小面"
+ },
+ {
+  "name": "清汤抄手(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "重庆小面"
+ },
+ {
+  "name": "清汤抄手(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "重庆小面"
+ },
+ {
+  "name": "杂酱",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 4,
+  "window": "重庆小面"
+ },
+ {
+  "name": "酸菜肉丝",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 4,
+  "window": "重庆小面"
+ },
+ {
+  "name": "鸡杂",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 5,
+  "window": "重庆小面"
+ },
+ {
+  "name": "红烧牛肉",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 7,
+  "window": "重庆小面"
+ },
+ {
+  "name": "原味汤粉",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 10,
+  "window": "南昌拌粉"
+ }
+]

@@ -1,0 +1,850 @@
+[
+ {
+  "name": "卤炒香干饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 11,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "麻辣肉肠饭",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "孜然酥肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "藤椒贝贝鸡饭",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "武汉黑鸭饭",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "麻辣翅根饭",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "巴掌大鸡腿饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "金牌猪脚饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "椒麻鸡肉饭",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "超级卤肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "超级炒卤肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "地道卤酱肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "孜然卤爆鸭饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "卤鸡蛋",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 1.5,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "卤莲藕",
+  "cat": "素菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 2,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "卤海带",
+  "cat": "素菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 2,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "卤干子",
+  "cat": "素菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 3,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "卤鹌鹑蛋",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 2,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "卤鸭腿",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 8,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "莲藕饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 8,
+  "window": "匠心热卤饭"
+ },
+ {
+  "name": "招牌牛肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "黑椒牛肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "番茄牛肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "至尊肥牛饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "萝卜牛杂饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "战斧鸭腿饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "湘味小炒肉饭",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 14.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "黑金烤肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "新疆大盘鸡饭",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 13.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "可乐鸡",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 13.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "黑椒鸡扒饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 13.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "香辣大鸡排饭",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 13.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "泰汁鸡丁饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 13.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "咖喱鸡块饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 13,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "香酥烤肉饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 12.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "法式烤排",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 12.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "海苔碎烤肠饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 11,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "肉末茄子饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 10.8,
+  "window": "牛东家牛肉饭"
+ },
+ {
+  "name": "重庆小面（素）(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 7,
+  "window": "重庆小面"
+ },
+ {
+  "name": "重庆小面（素）(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 8,
+  "window": "重庆小面"
+ },
+ {
+  "name": "贵州米粉（素）(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 7,
+  "window": "重庆小面"
+ },
+ {
+  "name": "贵州米粉（素）(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 8,
+  "window": "重庆小面"
+ },
+ {
+  "name": "番茄鸡蛋面/粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 9,
+  "window": "重庆小面"
+ },
+ {
+  "name": "番茄鸡蛋面/粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 11,
+  "window": "重庆小面"
+ },
+ {
+  "name": "豌豆杂酱面/粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 10,
+  "window": "重庆小面"
+ },
+ {
+  "name": "豌豆杂酱面/粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "重庆小面"
+ },
+ {
+  "name": "酸菜肉丝面/粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 10,
+  "window": "重庆小面"
+ },
+ {
+  "name": "酸菜肉丝面/粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "重庆小面"
+ },
+ {
+  "name": "土豆泥炸酱面/粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 10,
+  "window": "重庆小面"
+ },
+ {
+  "name": "土豆泥炸酱面/粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "重庆小面"
+ },
+ {
+  "name": "豌豆杂酱酸辣粉(小份)",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "重庆小面"
+ },
+ {
+  "name": "豌豆杂酱酸辣粉(大份)",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "重庆小面"
+ },
+ {
+  "name": "鸡杂面/粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "重庆小面"
+ },
+ {
+  "name": "鸡杂面/粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "重庆小面"
+ },
+ {
+  "name": "红烧排骨面/粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "重庆小面"
+ },
+ {
+  "name": "红烧排骨面/粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "重庆小面"
+ },
+ {
+  "name": "红烧牛肉面/粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "重庆小面"
+ },
+ {
+  "name": "红烧牛肉面/粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 16,
+  "window": "重庆小面"
+ },
+ {
+  "name": "贵州羊杂米粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "重庆小面"
+ },
+ {
+  "name": "贵州羊杂米粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 16,
+  "window": "重庆小面"
+ },
+ {
+  "name": "贵州特色羊肉米粉(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "重庆小面"
+ },
+ {
+  "name": "贵州特色羊肉米粉(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 16,
+  "window": "重庆小面"
+ },
+ {
+  "name": "鸡丝拌面",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 10,
+  "window": "重庆小面"
+ },
+ {
+  "name": "老麻抄手(小份)",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "重庆小面"
+ },
+ {
+  "name": "老麻抄手(大份)",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "重庆小面"
+ },
+ {
+  "name": "清汤抄手(小份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 12,
+  "window": "重庆小面"
+ },
+ {
+  "name": "清汤抄手(大份)",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "重庆小面"
+ },
+ {
+  "name": "杂酱",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 4,
+  "window": "重庆小面"
+ },
+ {
+  "name": "酸菜肉丝",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 4,
+  "window": "重庆小面"
+ },
+ {
+  "name": "鸡杂",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 5,
+  "window": "重庆小面"
+ },
+ {
+  "name": "红烧牛肉",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 7,
+  "window": "重庆小面"
+ },
+ {
+  "name": "原味汤粉",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 10,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "肉沫汤粉",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 13,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "杀猪粉",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "番茄酥肉汤粉",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "卤鸡腿汤粉",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "江西辣鸡爪汤粉",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 16,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "排骨汤粉",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 16,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "牛肉汤粉",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 17,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "经典老南昌素拌粉",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 9,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "肉沫拌粉",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 13,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "番茄酥肉拌粉",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "卤鸡腿拌粉",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "江西辣鸡爪拌粉",
+  "cat": "主食",
+  "spice": "辣",
+  "pricing": "单品",
+  "price": 16,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "排骨拌粉",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 16,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "牛肉拌粉",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 17,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "卤藕片",
+  "cat": "素菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 2,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "卤豆泡",
+  "cat": "素菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 2,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "卤海带结",
+  "cat": "素菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 2,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "猪肉卷章",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 3,
+  "window": "南昌拌粉"
+ },
+ {
+  "name": "肉沫茄子煲仔饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "煲仔饭"
+ },
+ {
+  "name": "广式传统腊肠煲仔饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "煲仔饭"
+ },
+ {
+  "name": "香菇滑鸡煲仔饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "煲仔饭"
+ },
+ {
+  "name": "潮汕肉丸煲仔饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "煲仔饭"
+ },
+ {
+  "name": "广式蟹排煲仔饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "煲仔饭"
+ },
+ {
+  "name": "豉汁排骨煲仔饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 16,
+  "window": "煲仔饭"
+ },
+ {
+  "name": "香芋鸡腿肉煲仔饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 14,
+  "window": "煲仔饭"
+ },
+ {
+  "name": "萝卜烧肉煲仔饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "煲仔饭"
+ },
+ {
+  "name": "双椒鸭胸煲仔饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "煲仔饭"
+ },
+ {
+  "name": "潮汕猪肉卷煲仔饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 15,
+  "window": "煲仔饭"
+ },
+ {
+  "name": "黑椒肥牛煲仔饭",
+  "cat": "主食",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 18,
+  "window": "煲仔饭"
+ },
+ {
+  "name": "时令青蔬",
+  "cat": "素菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 2,
+  "window": "煲仔饭"
+ },
+ {
+  "name": "窝心煎蛋",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 2,
+  "window": "煲仔饭"
+ },
+ {
+  "name": "双拼鸡鸭蛋肉",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 4,
+  "window": "煲仔饭"
+ },
+ {
+  "name": "双拼猪肉类",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 4,
+  "window": "煲仔饭"
+ },
+ {
+  "name": "双拼精品肥牛",
+  "cat": "荤菜",
+  "spice": "不辣",
+  "pricing": "单品",
+  "price": 6,
+  "window": "煲仔饭"
+ }
+]

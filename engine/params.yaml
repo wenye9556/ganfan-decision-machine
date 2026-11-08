@@ -1,0 +1,217 @@
+# =====================================================================
+# engine/params.yaml —— 引擎全部数值参数唯一存放处（SSOT：《模型与算法_v1.2》§第四部分）
+# 纪律：代码与文档禁止写死 🚧 数值；每个参数必须带 source 与 calibrated 两个字段。
+#   calibrated 取值：🚧 AI参数未标定 ｜ 实测 ｜ 公示级 ｜ 规格约定（任务书/拍板记录）
+# 本文件数值与 v1.2 实现逐点相等（R1–R4 签名一致性即迁移正确性证明）。
+# =====================================================================
+
+PRM:                       # —— 全局标量/列表（原 core.py PRM 字典，逐值迁移 ——
+  PORTION_MULTS:
+    value: [0.5, 0.75, 1.0, 1.25, 1.5]
+    source: 模型与算法_v1.2 §2.1 M集合
+    calibrated: "🚧 AI参数未标定"
+  PORTION_EPS:
+    value: 0.001
+    source: 模型与算法_v1.2 变更#19（ε=1e-3）
+    calibrated: "🚧 AI参数未标定"
+  TRAY_CAP:
+    value: 1000.0
+    source: 模型与算法_v1.2 §2.4 C13（TRAY_CAP🚧）
+    calibrated: "🚧 AI参数未标定"
+  RICE_KCAL100:
+    value: 116.0
+    source: 主表标准菜名表·米饭（熟重口径，loader 校验 100–135）
+    calibrated: 公示级
+  RICE_PROT100:
+    value: 2.6
+    source: 主表标准菜名表·米饭（熟重口径）
+    calibrated: 公示级
+  RICE_UP:
+    value: 1.0
+    source: 计价规则表·米饭+1元档（加价饭）
+    calibrated: 公示级
+  K_MAX:
+    value: 2
+    source: 模型与算法_v1.2 §2.4 C11（K🚧=2）
+    calibrated: "🚧 AI参数未标定"
+  T_LAZY:
+    value: 15.0
+    source: 模型与算法_v1.2 §2.4 C8（懒人 15🚧）
+    calibrated: "🚧 AI参数未标定"
+  WAIT_EXTRA:
+    value: 2.0
+    source: 模型与算法_v1.2 §2.2 T 表达式（WAIT_EXTRA🚧）
+    calibrated: "🚧 AI参数未标定"
+  INTRA_FLOOR:
+    value: 1.0
+    source: 模型与算法_v1.2 §2.2 T 表达式（INTRA_FLOOR🚧）
+    calibrated: "🚧 AI参数未标定"
+  WAIT_DEFAULT:
+    value: 3.0
+    source: 模型与算法_v1.2 §1.2 拥挤观察表兜底链（无实测时段保守默认·未标定，边界页披露）
+    calibrated: "🚧 AI参数未标定"
+  PI:                        # π 阶梯：松弛惩罚系数
+    value: {slot: 1.0, E: 10.0, Q: 10.0, oil: 10.0, veg: 3.0, T: 3.0}
+    source: 模型与算法_v1.2 §第四部分（π阶梯×PI_SCALE）
+    calibrated: "🚧 AI参数未标定"
+  RBAR:                      # 乘性松弛上限 r̄
+    value: {E_lo: 1.0, E_hi: 0.5, Q: 1.0, oil: 5.0, veg: 1.0, T: 10.0}
+    source: 模型与算法_v1.2 变更#3（E_lo/Q/veg 放开到 1；E_hi 保持 0.5）
+    calibrated: "🚧 AI参数未标定"
+  RELAX_SOFT:
+    value: 0.3
+    source: 模型与算法_v1.2 变更#22（RELAX_SOFT 0.3🚧 → 卡片标“放宽版”）
+    calibrated: "🚧 AI参数未标定"
+  RELAX_HARD:
+    value: 0.5
+    source: 模型与算法_v1.2 变更#22（RELAX_HARD 0.5🚧 → 降级“建议”）
+    calibrated: "🚧 AI参数未标定"
+  CBC_TIME_LIMIT:
+    value: 8
+    source: 模型与算法_v1.2 §3.2 确定性（CBC timeLimit🚧；绝不传 -threads，捆绑 CBC 会死锁）
+    calibrated: "🚧 AI参数未标定"
+  GAP:
+    value: 0.02
+    source: 模型与算法_v1.2 §3.2 确定性（CBC gapRel）
+    calibrated: "🚧 AI参数未标定"
+  SWEEP_FLOOR:
+    value: 0.15
+    source: 模型与算法_v1.2 变更#23（W_SWEEP 权重下限 w_j ≥ 0.15）
+    calibrated: "🚧 AI参数未标定"
+  SIGN_BONUS:
+    value: 0.6
+    source: 模型与算法_v1.2 §2.3 n味（SIGN_BONUS🚧）
+    calibrated: "🚧 AI参数未标定"
+  TAG_MATCH:
+    value: 0.4
+    source: 模型与算法_v1.2 §2.3 n味（TAG_MATCH🚧）
+    calibrated: "🚧 AI参数未标定"
+  TAG_MISS:
+    value: 0.3
+    source: core.py score() n味：口味标签未命中时的保底匹配分（自 v1.2 实现原样迁入）
+    calibrated: "🚧 AI参数未标定"
+  EPS_DIM:
+    value: 1.0e-9
+    source: 模型与算法_v1.2 §2.3 norm（极差<ε_dim 锁0.5、零方差维权重让渡）
+    calibrated: 规格约定（数值容差）
+  QUOTA_LABEL:
+    value: 2
+    source: 模型与算法_v1.2 §3.1 pick_with_quotas（内容通道≤2）/ 第四部分 quota=2/2
+    calibrated: 规格约定
+  QUOTA_WIN:
+    value: 2
+    source: 模型与算法_v1.2 §3.1 pick_with_quotas（同窗口≤2）/ 第四部分 quota=2/2
+    calibrated: 规格约定
+  DIVERSITY_SWAP:
+    value: 2
+    source: 模型与算法_v1.2 第四部分 DIVERSITY_SWAP=2（Top3 互斥阶梯 swap=2→1→0）
+    calibrated: 规格约定
+  ENRICH_TARGET:
+    value: 6
+    source: core.py recommend() C15 迭代排他补解：前沿富化目标唯一方案数（自 v1.2 实现原样迁入）
+    calibrated: "🚧 AI参数未标定"
+  ENRICH_ROUNDS:
+    value: 4
+    source: core.py recommend() C15 迭代排他补解最大轮数（§3.2 时延预算“补解≤3”的实现取值）
+    calibrated: "🚧 AI参数未标定"
+  # —— 以下为工程执行参数（引擎修复线新增，非模型系数）——
+  DOM_SHIFT:
+    value: 0.1
+    source: core.py recommend() 场景主导向量构造（w1-0.1/w3-0.1），自 v1.2 实现原样迁入
+    calibrated: "🚧 AI参数未标定"
+  DOM_BOOST:
+    value: 0.2
+    source: core.py recommend() 场景主导向量构造（w2+0.2），自 v1.2 实现原样迁入
+    calibrated: "🚧 AI参数未标定"
+  DOM_CAP:
+    value: 0.70
+    source: core.py recommend() 场景主导向量构造（w2 上限 0.70），自 v1.2 实现原样迁入
+    calibrated: "🚧 AI参数未标定"
+  WALK_FALLBACK:
+    value: 8.0
+    source: core.py _walk() 步行矩阵缺格兜底，自 v1.2 实现原样迁入
+    calibrated: "🚧 AI参数未标定"
+  SWEEP_WORKERS:
+    value: 8
+    source: 工程提速（任务书 2026-11：大池单请求 ≤5s）；线程池并发独立 CBC 子进程，每进程单线程
+    calibrated: 规格约定（硬门槛：R1–R4 Top3 签名与提速前完全一致）
+  RANDOM_TIME_BUDGET:
+    value: 6.0
+    source: 工程规格（任务书 2026-11：random_recommend 总时限熔断约 6s）
+    calibrated: 规格约定
+  RANDOM:                    # 随机配（摇一摇）解空间采样旋钮
+    value:
+      ROUNDS_PER_N: 6          # 最多尝试轮数 = min(n×ROUNDS_PER_N, ROUNDS_CAP)
+      ROUNDS_CAP: 12
+      A_EVERY: 3               # 每 A_EVERY 轮给一席自选通道（A）
+      MAIN_W: [0.85, 0.98]     # 主轴权重均匀采样区间
+      SIDE_W: [0.02, 0.06]     # 次轴权重均匀采样区间
+      CUT: [0.15, 0.40]        # 随机剔除菜品比例区间（“今天先不看这些”）
+    source: core.py random_recommend()（自实现原样迁入）
+    calibrated: "🚧 AI参数未标定"
+
+SCEN:                      # —— 场景包（原 core.py SCEN，逐值迁移；tags 载入后转 set）——
+  均衡:
+    value:
+      E: [600, 800]
+      Pmin: 20
+      Omax: 15
+      Vmin: 80
+      Tmax: null
+      w: [0.40, 0.33, 0.27]
+      ab: [0.4, 0.3]
+      tags: [咸, 鲜, 清淡]
+      ban_fried: false
+    source: 模型与算法_v1.2 §第四部分（场景包×5；本实现先落 4 包，“清淡养胃”进 backlog）
+    calibrated: "🚧 AI参数未标定"
+  减脂:
+    value:
+      E: [400, 650]
+      Pmin: 25
+      Omax: 8
+      Vmin: 120
+      Tmax: null
+      w: [0.21, 0.58, 0.21]
+      ab: [0.2, 0.5]
+      tags: [清淡]
+      ban_fried: true
+    source: 模型与算法_v1.2 §第四部分（减脂包；ban_fried=硬过滤油炸）
+    calibrated: "🚧 AI参数未标定"
+  增肌:
+    value:
+      E: [600, 900]
+      Pmin: 30
+      Omax: 12
+      Vmin: 80
+      Tmax: null
+      w: [0.20, 0.60, 0.20]
+      ab: [0.7, 0.0]
+      tags: [咸, 鲜]
+      ban_fried: false
+    source: 模型与算法_v1.2 §第四部分（增肌包）
+    calibrated: "🚧 AI参数未标定"
+  省钱:
+    value:
+      E: [500, 800]
+      Pmin: 15
+      Omax: 15
+      Vmin: 60
+      Tmax: null
+      w: [0.29, 0.14, 0.57]
+      ab: [0.3, 0.3]
+      tags: [咸]
+      ban_fried: false
+    source: 模型与算法_v1.2 §第四部分（省钱包）
+    calibrated: "🚧 AI参数未标定"
+
+BASE_SWEEP:                # —— 权重扫描基础向量（w_j ≥ SWEEP_FLOOR，变更#23）——
+  value:
+    - [0.70, 0.15, 0.15]
+    - [0.15, 0.70, 0.15]
+    - [0.15, 0.15, 0.70]
+    - [0.425, 0.425, 0.15]
+    - [0.425, 0.15, 0.425]
+    - [0.15, 0.425, 0.425]
+    - [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]
+  source: 模型与算法_v1.2 §3.1 管线（W_SWEEP 8 向量=基础7+场景主导1；w_j≥0.15 去纯顶点）
+  calibrated: "🚧 AI参数未标定"
