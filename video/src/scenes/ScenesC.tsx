@@ -6,13 +6,13 @@ import { Caption, C, FONT, GenBroll, genHas, Grain, Logo, PhotoBg, SceneTitle, T
  *  原为三张静态卡撑 18.5s（QC 冻结重灾），现补三层动效保证每 2s 有视觉事件：
  *  背景纹理 = 实拍 Ken Burns 轮换交叉溶解 + 暖色光斑缓慢漂移；
  *  前景卡片 = 图标微动 + 三卡轮流暖光高亮；中景数据 = 卡内小数据条数字滚动。 */
+/* AI 食欲图接入：Ken Burns 轮换池换 AI 图（就餐区 + 麻辣红油 + 窗口蒸汽，3 张轮换） */
 const S6_PHOTOS = [
-  'assets/photos/B-W01_土耳其烤肉.jpg',
-  'assets/photos/B-W03_韩式拌饭螺蛳粉.jpg',
-  'assets/photos/B-W04_麻辣香锅.jpg',
-  'assets/photos/B-W02_淮南牛肉汤_汤粉屏.jpg',
+  'assets/photos/GEN_S6_就餐区空镜.jpg',
+  'assets/photos/GEN_S7_麻辣.jpg',
+  'assets/photos/GEN_S1_窗口蒸汽.jpg',
 ];
-const S6_ROT = 4.5;   // 每张实拍底停留秒数（18.5s ÷ 4 张）
+const S6_ROT = 6.2;   // 每张 AI 底停留秒数（18.5s ÷ 3 张）
 const S6_FADE = 0.8;  // 交叉溶解时长
 
 const S6_CARDS: { icon: string; title: string; lines: string[]; nums: [number | string, string][] }[] = [
@@ -123,8 +123,9 @@ export const S6Value: React.FC = () => {
   );
 };
 
-const S7_PHOTOS = ['assets/photos/B-W01_土耳其烤肉.jpg', 'assets/photos/B-W02_淮南牛肉汤_汤粉屏.jpg',
-  'assets/photos/B-W03_韩式拌饭螺蛳粉.jpg', 'assets/photos/B-W04_麻辣香锅.jpg'];
+/* AI 食欲图接入：轮播 4 张 AI 特写（无独立浇汁米饭图，以麻辣红油浇淋特写代位，动作意象最近） */
+const S7_PHOTOS = ['assets/photos/GEN_S7_麻辣.jpg', 'assets/photos/GEN_S7_水饺.jpg',
+  'assets/photos/GEN_S7_汤粉.jpg', 'assets/photos/GEN_S7_蒸蛋.jpg'];
 const S7_CAR1 = 6 * 30;  // 轮播段在 S7 内的起点帧
 
 /** S7 菜品轮播段内容（S7 内 6–14s；ABPreview 复用）。

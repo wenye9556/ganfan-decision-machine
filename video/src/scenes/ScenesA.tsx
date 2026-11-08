@@ -5,8 +5,8 @@ import { Caption, C, FONT, GenBroll, genHas, Grain, Logo, Nutri, PhotoBg, SceneT
 /** S1 痛：下课人流 + 窗口纠结 + 脑内弹幕 + 719 计数 */
 export const S1Pain: React.FC = () => {
   const f = useCurrentFrame();
-  const t = f / 30;
-  const photo = t < 6 ? 'assets/photos/B-W04_麻辣香锅.jpg' : 'assets/photos/B-W02_淮南牛肉汤_汤粉屏.jpg';
+  // AI 食欲图接入：整段统一用「打饭窗口热菜蒸汽」做底（Ken Burns 连续推镜，不再 6s 硬切）
+  const photo = 'assets/photos/GEN_S1_窗口蒸汽.jpg';
   const danmu = [
     { txt: '会胖吗…', x: 150, y: 180, at: 0.6 },
     { txt: '太贵了吧', x: 1240, y: 240, at: 2.4 },
