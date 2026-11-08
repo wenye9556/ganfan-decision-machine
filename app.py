@@ -27,9 +27,14 @@ st.markdown(H.CSS, unsafe_allow_html=True)
 MASTER = os.path.join(ROOT, '干饭决策机_数据采集_主表.xlsx')
 BANDS = {k: v['E'] for k, v in core.SCEN.items()}
 TABOO_ALL = ['猪', '牛', '羊', '海鲜', '蛋', '奶', '花生', '芝麻', '麸质', '香菜', '内脏']
+QUICK_TABOO = ['猪', '牛', '羊', '海鲜', '蛋', '奶', '花生', '香菜']   # 快选条忌口 chips（NL 回填仅点亮这 8 项）
+SCEN_OPTS = ['均衡', '减脂', '增肌', '省钱']
+SCEN_EMOJI = {'均衡': '🍽️', '减脂': '🥗', '增肌': '💪', '省钱': '💰'}
+SPICE_OPTS = [0, 1, 2]
+SPICE_LABEL = ['不辣', '微辣', '能吃辣']
 ANCHOR_OPTS = ['图书馆', '教学楼', '宿舍区']
 PARSER_CN = {'rule': '规则解析', 'llm': '大模型解析'}
-BUDGET_CAP = 50          # 与手动微调滑杆上限一致；预算重试按钮在此上限内生效
+BUDGET_CAP = 50          # 预算重试按钮在此上限内生效；快选滑杆只能表达 10–30，出界以滑杆边界显示
 
 
 @st.cache_resource
@@ -48,9 +53,11 @@ pc = get_cache()
 for k, v in dict(req=None, res=None, reasons=[], meta=None, last_nl='', parsed_note='',
                 rand_note='', last_parsed_req=None, manual_dirty=False).items():
     st.session_state.setdefault(k, v)
-for k, v in dict(scen='均衡', budget=20, period='午 餐', asof='12:30', anchor='图书馆',
-                 spice=2, taboo=[], lazy=False).items():
+for k, v in dict(scen='均衡', budget=18, period='午 餐', asof='12:30', anchor='图书馆',
+                 spice=2, lazy=False).items():
     st.session_state.setdefault(k, v)
+for t in QUICK_TABOO:                                    # 忌口 chips：每个忌口一个布尔键（点亮=忌口）
+    st.session_state.setdefault(f'taboo_{t}', False)
 
 
 def clear_cheats():
@@ -96,17 +103,19 @@ def do_solve_random(req):
 
 
 def apply_req_to_panel(req):
-    """把一个结构化条件回填到手动微调面板（须在面板 widgets 实例化之前调用）。"""
-    st.session_state.scen = req['scenario'] if req['scenario'] in ('均衡', '减脂', '增肌', '省钱') else '均衡'
-    try:                                            # 面板滑杆只能表达 5–50，出界值以滑杆边界显示
-        st.session_state.budget = max(5, min(BUDGET_CAP, int(req['B'])))
+    """把一个结构化条件回填点亮到快选条（须在快选 widgets 实例化之前调用）。
+    预算滑杆只能表达 10–30，出界值以滑杆边界显示；求解永远用原值。"""
+    st.session_state.scen = req['scenario'] if req['scenario'] in SCEN_OPTS else '均衡'
+    try:
+        st.session_state.budget = max(10, min(30, int(req['B'])))
     except (TypeError, ValueError):
-        st.session_state.budget = 20
+        st.session_state.budget = 18
     st.session_state.period = req['period'] + ' 餐'
     st.session_state.asof = req['asof']
     st.session_state.anchor = req['anchor'] if req['anchor'] in ANCHOR_OPTS else '图书馆'
     st.session_state.spice = max(0, min(2, int(req['spice_max'])))
-    st.session_state.taboo = sorted(req['taboo'])
+    for t in QUICK_TABOO:                           # chips 外的忌口（芝麻/麸质/内脏）只留在求解条件里
+        st.session_state[f'taboo_{t}'] = t in req['taboo']
     st.session_state.lazy = bool(req['lazy'])
 
 
@@ -114,7 +123,8 @@ def manual_req():
     return dict(scenario=st.session_state.scen, B=st.session_state.budget,
                 period=st.session_state.period.split(' ')[0],
                 asof=st.session_state.asof, anchor=st.session_state.anchor,
-                spice_max=st.session_state.spice, taboo=set(st.session_state.taboo),
+                spice_max=st.session_state.spice,
+                taboo={t for t in QUICK_TABOO if st.session_state[f'taboo_{t}']},
                 lazy=st.session_state.lazy)
 
 
@@ -131,8 +141,15 @@ def random_req():
 
 
 def mark_manual():
-    """标记用户亲手动过微调面板（NL 解析回填不算，见 NL 分支里重置）。"""
+    """标记用户亲手动过快选条 / 高级微调（NL 解析回填不算，见 NL 分支里重置）。"""
     st.session_state.manual_dirty = True
+
+
+def ticks_html(labels, cur):
+    """滑杆下方的档位标签行：当前档位高亮（随滑杆位置变化，每次 rerun 重绘）。"""
+    cells = ''.join(f'<span class="on">{html.escape(l)}</span>' if i == cur
+                    else f'<span>{html.escape(l)}</span>' for i, l in enumerate(labels))
+    return f'<div class="qb-ticks">{cells}</div>'
 
 
 def parsed_chips_html(note):
@@ -164,19 +181,18 @@ tab_meal, tab_week, tab_comment, tab_about = st.tabs(['🍚 配饭', '📅 周�
 
 # ---------------- 配饭 ----------------
 with tab_meal:
-    # 无解页「一键改条件重试」按钮在这里落地：本段位于面板 widgets 实例化之前，
-    # 可以安全改写面板键；按钮点击处只存 pending_req 并立即 rerun。
+    # 回填快选条只能在快选 widgets 实例化之前做：NL 新句子 / 无解页一键重试都只在按钮处
+    # 存 pending_req 并立即 rerun，由这里（位于所有 widgets 之前）回填 + 求解。
     pending = st.session_state.pop('pending_req', None)
     if pending is not None:
         apply_req_to_panel(pending)
-        st.session_state.manual_dirty = True
+        st.session_state.manual_dirty = bool(st.session_state.pop('pending_dirty', True))
         st.session_state.rand_note = ''
-        st.session_state.parsed_note = ''
         do_solve(pending)
 
     st.markdown('<div class="ask-row"><div class="ask-ava">🍚</div>'
                 '<div class="ask-bubble"><b>跟我说说今天想吃啥</b>'
-                '<span>场景、预算、忌口，一句话就行</span></div></div>', unsafe_allow_html=True)
+                '<span>一句话，或者拖下面的快选条</span></div></div>', unsafe_allow_html=True)
     nl = st.text_input('说一句话，剩下的交给我', value=st.session_state.last_nl,
                        placeholder='没想法？不输入也行——点「一键配饭」随机抽组条件配三套',
                        label_visibility='collapsed')
@@ -185,54 +201,90 @@ with tab_meal:
     new_input = has_text and not same_text
     manual_dirty = bool(st.session_state.manual_dirty)
 
+    # ---------------- 滑动快选条：预算 / 场景 / 辣度 / 忌口 ----------------
+    # 任一交互 → mark_manual（manual_dirty=True）→ 下一次「一键配饭」按快选条件确定性配。
+    scen_now, spice_now = st.session_state.scen, st.session_state.spice
+    st.markdown('<div class="qb-head"><span class="qb-t">⚡ 滑动快选</span>'
+                '<span class="qb-s">拖一拖、点一点，再按「一键配饭」</span></div>'
+                f'<div class="qb-row"><span class="qb-lab">💰 预算上限</span>'
+                f'<span class="qb-bval">{st.session_state.budget}<i>元</i></span></div>',
+                unsafe_allow_html=True)
+    st.slider('预算（元）', 10, 30, step=1, key='budget', on_change=mark_manual,
+              label_visibility='collapsed')
+    st.markdown('<div class="qb-ends"><span>10 元</span><span>20</span><span>30 元</span></div>',
+                unsafe_allow_html=True)
+    qs1, qs2 = st.columns(2)
+    with qs1:
+        st.markdown(f'<div class="qb-row"><span class="qb-lab">场景</span>'
+                    f'<span class="qb-val">{SCEN_EMOJI[scen_now]} {scen_now}</span></div>',
+                    unsafe_allow_html=True)
+        st.select_slider('场景', options=SCEN_OPTS, key='scen', on_change=mark_manual,
+                         format_func=lambda s: f'{s}{SCEN_EMOJI[s]}', label_visibility='collapsed')
+        st.markdown(ticks_html(SCEN_OPTS, SCEN_OPTS.index(scen_now)), unsafe_allow_html=True)
+    with qs2:
+        st.markdown(f'<div class="qb-row"><span class="qb-lab">辣度</span>'
+                    f'<span class="qb-val">🌶️ {SPICE_LABEL[spice_now]}</span></div>',
+                    unsafe_allow_html=True)
+        st.select_slider('辣度', options=SPICE_OPTS, key='spice', on_change=mark_manual,
+                         format_func=lambda x: SPICE_LABEL[x], label_visibility='collapsed')
+        st.markdown(ticks_html(SPICE_LABEL, spice_now), unsafe_allow_html=True)
+    n_taboo = sum(bool(st.session_state[f'taboo_{t}']) for t in QUICK_TABOO)
+    st.markdown(f'<div class="qb-row qb-row-chips"><span class="qb-lab">🚫 忌口</span>'
+                f'<span class="qb-s">{f"已点亮 {n_taboo} 项 · 再点熄灭" if n_taboo else "点亮 = 不吃，再点熄灭"}</span></div>',
+                unsafe_allow_html=True)
+    for col, t in zip(st.columns(len(QUICK_TABOO)), QUICK_TABOO):   # 8 列 chips 行（CSS 按 8 列定位成药丸）
+        col.checkbox(t, key=f'taboo_{t}', on_change=mark_manual)
+
     if st.button('🍽️ 一键配饭', type='primary', use_container_width=True):
         if new_input:
             req, pmeta = nl_agent.parse(nl)
             st.session_state.last_nl = nl.strip()
-            apply_req_to_panel(req)
             st.session_state.parsed_note = (
                 f"听懂啦：{req['scenario']} · {req['B']:g}元 · {req['period']}{req['asof']} · "
-                f"{req['anchor']} · 辣度{['不辣', '微辣', '辣'][req['spice_max']]}"
+                f"{req['anchor']} · 辣度{SPICE_LABEL[req['spice_max']]}"
                 + (f" · 忌{'/'.join(sorted(req['taboo']))}" if req['taboo'] else '')
                 + (' · 懒人模式' if req['lazy'] else '')
                 + f"（{PARSER_CN.get(pmeta['parser'], pmeta['parser'])}）")
             st.session_state.rand_note = ''
             st.session_state.manual_dirty = False               # NL 回填不算手动配置
             st.session_state.last_parsed_req = req              # 记住条件：同句二连击确定性重解用
-            do_solve(req)                                   # 有句子 → 该条件下的确定性解
+            # 快选条在按钮上方、本轮已实例化 → 回填点亮须走 pending + rerun（见本页顶部）
+            st.session_state.pending_dirty = False
+            st.session_state.pending_req = req
+            st.rerun()
         elif same_text and not manual_dirty:
-            # 同句二连击：面板没动过 → 按「上次 NL 解析出的条件」确定性重解（缓存命中秒出）
+            # 同句二连击：快选条没动过 → 按「上次 NL 解析出的条件」确定性重解（缓存命中秒出）
             req = st.session_state.last_parsed_req or manual_req()
             st.session_state.rand_note = ''
             do_solve(req)
         elif not has_text and not manual_dirty:
-            req = random_req()                          # 空输入且面板未脏 → 随机抽条件
+            req = random_req()                          # 空输入且从未碰快选条 → 随机抽条件
             st.session_state.rand_note = (
-                f"{req['scenario']} · {req['B']:g}元 · {['不辣', '微辣', '辣'][req['spice_max']]}"
+                f"{req['scenario']} · {req['B']:g}元 · {SPICE_LABEL[req['spice_max']]}"
                 + (f" · 忌{'/'.join(sorted(req['taboo']))}" if req['taboo'] else ''))
             st.session_state.parsed_note = ''
             do_solve_random(req)                        # 该随机条件下的解（缓存可复现）
         else:
-            # 空输入+面板脏，或同句+面板脏 → 以手动微调面板为准，确定性解
+            # 空输入+快选条动过，或同句+快选条动过 → 以快选条（+高级微调）为准，确定性解
             st.session_state.rand_note = ''
             st.session_state.parsed_note = ''
             do_solve(manual_req())
 
     if not has_text:
         if manual_dirty:
-            st.markdown(H.hint_html('🎛️ 点「一键配饭」将按下方「手动微调」面板里的条件配'
-                                    '（面板被改过，同条件结果可复现）；想随机换口味，先把面板改回默认或点结果下方「再换一批」。'),
+            st.markdown(H.hint_html('🎛️ 点「一键配饭」将按上方快选条的条件配（条件动过，同条件结果可复现）；'
+                                    '想随机换口味，点结果下方「再换一批」。'),
                         unsafe_allow_html=True)
         else:
             st.markdown(H.hint_html(
-                '🎲 没想法？不输入也行——点「一键配饭」会随机抽一组条件（场景/预算/辣度/忌口），'
-                '每次都不一样；不满意点结果下方「再换一批」，想按固定条件配就展开手动微调。'),
+                '🎲 没想法？不输入、不碰快选条——点「一键配饭」会随机抽一组条件（场景/预算/辣度/忌口），'
+                '每次都不一样；想按固定条件配，就拖一下上面的快选条。'),
                 unsafe_allow_html=True)
     elif new_input:
-        st.markdown(H.hint_html('💡 新句子 → 点「一键配饭」先听懂再配三套（同条件可复现）；'
-                                '也可以展开手动微调改得更细。'), unsafe_allow_html=True)
+        st.markdown(H.hint_html('💡 新句子 → 点「一键配饭」先听懂再配三套，听懂的条件会回填点亮到快选条'
+                                '（同条件可复现）。'), unsafe_allow_html=True)
     elif manual_dirty:
-        st.markdown(H.hint_html('💡 这句话已经听懂过了；但「手动微调」面板改过，点按钮将以面板里的设置为准（可复现）。'),
+        st.markdown(H.hint_html('💡 这句话已经听懂过了；但快选条动过，点按钮将以快选条上的条件为准（可复现）。'),
                     unsafe_allow_html=True)
     else:
         st.markdown(H.hint_html('💡 这句话已经听懂过了；再点「一键配饭」会按已听懂的条件原样重配一遍'
@@ -241,41 +293,14 @@ with tab_meal:
     if st.session_state.parsed_note:
         st.markdown(parsed_chips_html(st.session_state.parsed_note), unsafe_allow_html=True)
 
-    with st.expander('手动微调（场景 / 预算 / 忌口 / 时段）'):
-        st.caption('快捷场景：')
-        q1, q2, q3 = st.columns(3)
-
-        def quick_solve(req):
-            """快捷按钮：回填面板 widgets + 标记手动配置 + 求解（结果与面板不脱钩）。"""
-            apply_req_to_panel(req)
-            st.session_state.manual_dirty = True
-            st.session_state.rand_note = ''
-            st.session_state.parsed_note = ''
-            do_solve(req)
-
-        if q1.button('🥗 减脂18忌猪', key='quick_1', use_container_width=True):
-            quick_solve(dict(scenario='减脂', B=18, period='午', asof='12:30', anchor='图书馆',
-                             spice_max=2, taboo={'猪'}, lazy=False))
-        if q2.button('🪙 省钱15微辣', key='quick_2', use_container_width=True):
-            quick_solve(dict(scenario='省钱', B=15, period='午', asof='12:00', anchor='教学楼',
-                             spice_max=1, taboo=set(), lazy=False))
-        if q3.button('💪 增肌25忌海鲜', key='quick_3', use_container_width=True):
-            quick_solve(dict(scenario='增肌', B=25, period='晚', asof='18:30', anchor='宿舍区',
-                             spice_max=2, taboo={'海鲜'}, lazy=False))
-        st.radio('场景', ['均衡', '减脂', '增肌', '省钱'], horizontal=True, key='scen',
-                 on_change=mark_manual)
-        st.slider('预算（元）', 5, 50, key='budget', on_change=mark_manual)
-        st.multiselect('忌口 / 过敏原', TABOO_ALL, key='taboo', placeholder='不忌口（可多选）',
-                       on_change=mark_manual)
+    with st.expander('🎛️ 高级微调（时段 / 时间 / 位置 / 懒人）'):
         c1, c2 = st.columns(2)
         c1.selectbox('时段', ['午 餐', '早 餐', '下午 餐', '晚 餐', '夜宵 餐'], key='period',
                      on_change=mark_manual)
-        c2.selectbox('锚点', ANCHOR_OPTS, key='anchor', on_change=mark_manual)
+        c2.selectbox('位置（锚点）', ANCHOR_OPTS, key='anchor', on_change=mark_manual)
         c3, c4 = st.columns(2)
-        c3.select_slider('辣度上限', options=[0, 1, 2], format_func=lambda x: ['不辣', '微辣', '辣'][x],
-                         key='spice', on_change=mark_manual)
-        c4.text_input('时间', key='asof', help='HH:MM，用于售罄与排队判定', on_change=mark_manual)
-        st.checkbox('懒人模式（到坐上桌 ≤15 分钟）', key='lazy', on_change=mark_manual)
+        c3.text_input('时间', key='asof', help='HH:MM，用于售罄与排队判定', on_change=mark_manual)
+        c4.checkbox('🛋️ 懒人模式', key='lazy', help='到坐上桌 ≤15 分钟', on_change=mark_manual)
 
     res, reasons, meta = st.session_state.res, st.session_state.reasons, st.session_state.meta
     if res is None:
@@ -309,12 +334,16 @@ with tab_meal:
                     r = dict(fail_req)
                     r['B'] = min(BUDGET_CAP, float(r['B']) + 3)
                     st.session_state.pending_req = nl_agent.sanitize(r)
+                    st.session_state.pending_dirty = True
+                    st.session_state.parsed_note = ''
                     st.rerun()
                 if can_taboo and retry_cols[1].button('🥬 去掉忌口重试', key='retry_taboo',
                                                       use_container_width=True):
                     r = dict(fail_req)
                     r['taboo'] = set()
                     st.session_state.pending_req = nl_agent.sanitize(r)
+                    st.session_state.pending_dirty = True
+                    st.session_state.parsed_note = ''
                     st.rerun()
                 tips = []
                 if can_budget:

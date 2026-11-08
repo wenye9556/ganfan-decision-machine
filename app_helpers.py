@@ -280,20 +280,75 @@ div[data-testid="stElementContainer"]:has([data-testid="stRadio"]){ width:100% !
   color:#C4602A !important; font-weight:900 !important;
 }
 
-/* slider */
+/* ================= 滑动快选条 ================= */
+.qb-head{ display:flex; align-items:baseline; gap:8px; margin:4px 0 2px; }
+.qb-head .qb-t{ font-size:12px; font-weight:900; color:#B4612C; letter-spacing:.6px; }
+.qb-head .qb-s, .qb-row .qb-s{ font-size:10.5px; color:#B7A08B; }
+.qb-row{ display:flex; align-items:center; justify-content:space-between; margin:2px 0 0; }
+.qb-row .qb-lab{ font-size:11.5px; font-weight:800; color:#8A6C52; letter-spacing:.3px; }
+.qb-row .qb-val{ font-size:12.5px; font-weight:900; color:#C4602A; }
+.qb-row .qb-bval{ font-size:23px; font-weight:900; color:#D06A30; line-height:1; letter-spacing:-.5px; }
+.qb-row .qb-bval i{ font-style:normal; font-size:11px; font-weight:700; color:#A08770; margin-left:2px; }
+.qb-ends{ display:flex; justify-content:space-between; font-size:9.5px; color:#C6B49E; padding:0 3px; margin-top:-3px; }
+/* 档位标签行：等分网格居中，让每个档位正对滑杆刻度位置（当前档 .on 高亮） */
+.qb-ticks{
+  display:grid; grid-auto-flow:column; grid-auto-columns:1fr;
+  text-align:center; padding:0 4px; margin-top:-2px;
+}
+.qb-ticks span{ font-size:10px; color:#B9A48D; font-weight:700; transition:color .15s; white-space:nowrap; }
+.qb-ticks span.on{ color:#C4602A; font-weight:900; position:relative; }
+.qb-ticks span.on::after{                            /* 当前档位：橙色小圆点标记（随滑杆位置走） */
+  content:''; position:absolute; left:50%; bottom:-5px; transform:translateX(-50%);
+  width:4px; height:4px; border-radius:50%; background:#E07A3F;
+}
+.qb-row-chips{ margin-top:7px; }
+
+/* slider —— 快选条滑杆：暖橙大 thumb / 奶油轨道，档位标签用自绘 .qb-ticks（默认刻度与气泡隐藏） */
+[data-testid="stSlider"]{ margin:0; }
+[data-testid="stSlider"] [data-testid="stWidgetLabel"]{ margin-bottom:1px; padding-bottom:0; }
+[data-testid="stSlider"] [data-testid="stSliderThumbValue"],
+[data-testid="stSlider"] [data-testid="stSliderTickBar"]{ display:none !important; }
+[data-testid="stSlider"] [data-baseweb="slider"] > div > div{      /* 轨道（1.50 DOM：slider>div>div） */
+  background:#F3E4CF !important; height:6px !important; border-radius:6px;
+}
 [data-testid="stSlider"] [role="slider"]{
-  box-shadow:0 0 0 3px #fff, 0 2px 8px rgba(224,122,63,.45) !important;
+  width:20px !important; height:20px !important; margin-top:3px;   /* 放大后补偿 thumb 锚点居中 */
+  background:linear-gradient(145deg,#F59A55,#D96C2F) !important;
+  border:2.5px solid #FFFFFF !important;
+  box-shadow:0 3px 9px rgba(217,108,47,.5) !important;
+  transition:transform .15s;
 }
-[data-testid="stSlider"] [data-testid="stSliderThumbValue"]{
-  font-size:10.5px !important; font-weight:800; color:#B4612C !important;
-  top:-26px !important;
-  background:#FFFFFF; border:1px solid #F0DFC9; border-radius:8px;
-  padding:1px 6px; line-height:1.5;
-  box-shadow:0 2px 6px -4px rgba(150,90,40,.6);
+[data-testid="stSlider"] [role="slider"]:focus-visible{
+  box-shadow:0 0 0 6px rgba(224,122,63,.2), 0 3px 9px rgba(217,108,47,.5) !important;
 }
-[data-testid="stSlider"] [data-testid="stSliderTickBar"] span{
-  font-size:10px !important; color:#B39B85 !important;
+
+/* 忌口 chips —— 页面上唯一 8 列的横排块里的 checkbox，重绘成圆角药丸（点亮=暖橙填充） */
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)){ gap:5px !important; }
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stColumn"]{ min-width:0 !important; }
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"]{ margin:0 !important; padding:0 !important; }
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label{
+  display:flex !important; align-items:center; justify-content:center;
+  min-height:32px; padding:5px 2px; cursor:pointer; gap:0 !important;
+  background:#FFFFFF; border:1.5px solid #EFDDC7; border-radius:20px;
+  box-shadow:0 2px 5px -4px rgba(150,90,40,.4);
+  transition:background .15s, border-color .15s, box-shadow .15s, transform .12s;
 }
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label:hover{
+  border-color:#E8B98F; transform:translateY(-1px);
+}
+/* 隐藏原生勾选框与 input（1.50 DOM：label 首子元素是方框 span，其后是隐藏 input） */
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label > span:first-child,
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label > input{ display:none !important; }
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label p{
+  font-size:11px !important; font-weight:700; color:#8A6A50 !important;
+  white-space:nowrap; margin:0; line-height:1.3; text-align:center;
+}
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label:has(input:checked){
+  background:linear-gradient(135deg,#F59A55 0%,#E07A3F 55%,#D06A30 100%) !important;
+  border-color:#D06A30;
+  box-shadow:0 6px 12px -6px rgba(200,100,40,.65), inset 0 1px 0 rgba(255,255,255,.25);
+}
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label:has(input:checked) p{ color:#fff !important; font-weight:900; }
 
 /* selectbox / multiselect */
 [data-testid="stSelectbox"] [data-baseweb="select"] > div:first-child,
@@ -680,6 +735,15 @@ div[data-testid="stElementContainer"]:has(.meal-card) + div[data-testid="stLayou
   .ai-txt{ font-size:11.5px; }
   .hint{ font-size:11px; line-height:1.68; padding:8px 10px; }
   div[data-testid="stTextInputRootElement"] input::placeholder{ font-size:13px; }
+
+  /* 快选条手机适配：字号收紧、chips 触控高度保持 ≥32px、不横溢 */
+  .qb-head .qb-s, .qb-row .qb-s{ font-size:10px; }
+  .qb-row .qb-bval{ font-size:20px; }
+  .qb-ticks{ padding:0 8px; }
+  .qb-ticks span{ font-size:9.5px; }
+  div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)){ gap:4px !important; }
+  div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label{ min-height:32px; padding:5px 0; }
+  div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label p{ font-size:10.5px !important; }
 
   /* 方案卡操作行：手机上保持两按钮并排 + 放纵餐整行 */
   div[data-testid="stElementContainer"]:has(.meal-card) + div[data-testid="stLayoutWrapper"] [data-testid="stHorizontalBlock"]{
