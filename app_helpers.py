@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """app_helpers.py —— 干饭决策机 Streamlit UI：样式 / 卡片 / 打卡周报 / 预置评论"""
+import hashlib
 import html
 import json
 import os
@@ -778,11 +779,130 @@ div[data-testid="stElementContainer"]:has(.meal-card) + div[data-testid="stLayou
     font-size:11.5px !important;
   }
 }
+
+/* ================= 四宫格「估算」角标 ================= */
+.mc-stats{ position:relative; }
+.ms-est{
+  position:absolute; top:0; right:0; z-index:1;
+  font-size:8.5px; font-weight:800; letter-spacing:.6px; line-height:1.5;
+  color:#A8741A; background:#FDF0DA; border-left:1px solid #F3DDB4; border-bottom:1px solid #F3DDB4;
+  padding:0 5px 0 6px; border-radius:0 0 0 8px; cursor:help;
+}
+
+/* ================= 决策小票：🧾 这顿怎么配出来的 ================= */
+[data-testid="stMarkdownContainer"]:has(> .rcpt),
+[data-testid="stMarkdownContainer"]:has(> .chal-banner),
+[data-testid="stMarkdownContainer"]:has(> .twin),
+[data-testid="stMarkdownContainer"]:has(> .chal-intro),
+[data-testid="stMarkdownContainer"]:has(> .chal-say){ margin-bottom:0 !important; }
+[data-testid="stExpander"]:has(.rcpt) details{
+  background:linear-gradient(180deg,#FFF9EF 0%,#FFF5E6 100%) !important;
+  border:1.5px dashed #EBC9A0 !important;
+}
+[data-testid="stExpander"]:has(.rcpt) summary p{ color:#B4612C !important; }
+.rcpt{ color:#5C4432; font-variant-numeric:tabular-nums; padding:0 0 2px; }
+.rc-sec{ padding:9px 0 8px; border-top:1px dashed #EED7BB; }
+.rc-sec:first-child{ border-top:none; padding-top:4px; }
+.rc-h{
+  display:flex; align-items:center; gap:7px; margin-bottom:6px;
+  font-size:12px; font-weight:900; color:#B4612C; letter-spacing:.5px;
+}
+.rc-no{
+  width:18px; height:18px; flex:0 0 18px; border-radius:50%;
+  display:grid; place-items:center; font-size:10px; font-weight:900; color:#fff;
+  background:linear-gradient(145deg,#F59A55,#D96C2F);
+}
+.rc-chips{ display:flex; flex-wrap:wrap; gap:5px; }
+.rc-chips span{
+  font-size:11.5px; color:#7D624A; background:#fff; line-height:1.45;
+  border:1px solid #F0DFC9; border-radius:9px; padding:2px 8px;
+}
+.rc-chips span:first-child{ background:#FDEEE0; border-color:#F7D6B6; color:#B4612C; font-weight:800; }
+.rc-note{ margin-top:6px; font-size:10.5px; color:#A8917B; line-height:1.6; overflow-wrap:anywhere; }
+.rc-line{ display:flex; align-items:baseline; gap:6px; font-size:12px; line-height:1.55; padding:1.5px 0; }
+.rc-line .rc-l{ flex:0 1 auto; min-width:0; color:#6E5744; overflow-wrap:anywhere; }
+.rc-line i{ flex:1 1 10px; min-width:10px; border-bottom:1.5px dotted #E3C29C; transform:translateY(-3px); }
+.rc-line b{ flex:0 0 auto; font-weight:900; color:#4A3627; white-space:nowrap; }
+.rc-line em{ flex:0 0 44px; text-align:right; font-style:normal; font-size:10.5px; color:#C08A5E; white-space:nowrap; }
+.rc-sub{ font-size:10px; color:#B39A80; margin:-1px 0 2px 10px; line-height:1.5; }
+.rc-line.rc-sum{ margin-top:4px; padding-top:5px; border-top:1px solid #F1DDC4; }
+.rc-line.rc-sum .rc-l, .rc-line.rc-sum b{ color:#C4602A; font-weight:900; }
+.rc-check{ display:flex; align-items:center; gap:9px; }
+.rc-check b{
+  flex:0 0 auto; font-size:16px; font-weight:900; color:#3F7C33; white-space:nowrap;
+  background:#E9F5E4; border-radius:10px; padding:2px 9px;
+}
+.rc-check.warn b{ color:#B44436; background:#FBE3DF; }
+.rc-check.none b{ color:#9A8470; background:#F3ECE2; }
+.rc-check span{ font-size:11.5px; color:#6E5744; line-height:1.55; min-width:0; }
+.rc-why{ font-size:12px; color:#5B4534; line-height:1.72; overflow-wrap:anywhere; }
+.rc-foot{
+  text-align:center; font-size:9.5px; color:#C2AA90; letter-spacing:1.2px;
+  padding-top:7px; border-top:1px dashed #EED7BB;
+}
+
+/* ================= 拆台模式：给评委的刁难卡 ================= */
+[data-testid="stExpander"]:has(.chal-intro) [data-testid="stBaseButton-secondary"]{
+  min-height:44px !important; justify-content:flex-start !important;
+  background:linear-gradient(180deg,#FFFDF9,#FFF4E6) !important;
+  border:1.5px dashed #E9C39A !important;
+}
+[data-testid="stExpander"]:has(.chal-intro) [data-testid="stBaseButton-secondary"] p{
+  font-size:13px !important; color:#7A4A26 !important; text-align:left;
+}
+.chal-intro{
+  background:#FFF6EA; border:1px solid #F4E4CF; border-radius:12px;
+  padding:7px 10px; font-size:11px; line-height:1.65; color:#82694F; margin-top:4px;
+}
+.chal-say{ font-size:10.5px; color:#A08770; line-height:1.5; margin:-5px 3px 6px; overflow-wrap:anywhere; }
+.chal-banner{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  background:linear-gradient(90deg,#FFF1DF,#FFF7EE); border:1px solid #F3D3AE;
+  border-radius:14px; padding:8px 12px; font-size:12px; color:#8A4F22; line-height:1.5;
+}
+.chal-banner b{ color:#C4602A; }
+.chal-banner .t{
+  margin-left:auto; font-weight:900; color:#C4602A; white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.twin{ background:#FFFBF5; border:1px solid #F3E4D0; border-radius:14px; padding:9px 10px 10px; }
+.twin-g{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.twin-col{ background:#fff; border:1px solid #F0DFC9; border-radius:11px; padding:7px 9px; min-width:0; }
+.twin-h{
+  display:flex; justify-content:space-between; gap:6px; margin-bottom:3px;
+  font-size:11px; font-weight:900; color:#8A6C52;
+}
+.twin-h span{ color:#C4602A; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.twin-row{
+  display:flex; justify-content:space-between; gap:6px; padding:2px 0;
+  font-size:11.5px; color:#4A3627; border-top:1px dashed #F5EADC;
+  font-variant-numeric:tabular-nums;
+}
+.twin-row code{
+  font-family:ui-monospace,Consolas,"Courier New",monospace; font-size:11px;
+  color:#6B4C9E; background:#F3EDFB; border-radius:5px; padding:0 4px;
+}
+.twin-ok, .twin-bad{
+  margin-top:8px; border-radius:10px; padding:5px 10px; text-align:center;
+  font-size:12px; font-weight:900; line-height:1.5;
+}
+.twin-ok{ color:#3F7C33; background:#E9F5E4; }
+.twin-bad{ color:#B44436; background:#FBE3DF; }
+@media (max-width:480px){
+  .rc-line{ font-size:11.5px; }
+  .rc-line em{ flex-basis:38px; }
+  .twin-g{ gap:6px; }
+  .twin-row{ font-size:10.5px; }
+}
 </style>
 """
 
 CIRC = '①②③④⑤'
 CAT_EMOJI = {'主食': '🍚', '荤菜': '🍗', '半荤': '🍖', '素菜': '🥬', '汤': '🥣', '饮品': '🥤'}
+# 四宫格「估算」角标的悬停说明（title 属性：只用全角引号，不含半角双引号）
+EST_TITLE = ('价格为实采菜价（称重菜＝单价×建议克数）；热量/蛋白质/油脂按同一套算式估算'
+             '（麦当劳为官方公示值），克重与油克系数待实测，仅供参考、非医疗建议。'
+             '算式见「关于 · 这个数字怎么来的」')
 
 WIN_EMOJI = {
     '粤式风味': '🥟', '大众餐': '🍛', '水饺鲜生': '🥟', '南昌拌粉': '🍜',
@@ -861,6 +981,7 @@ def plan_card(p, reason, idx):
   <div class="ms"><span class="v">{p['E']:g}<i>kcal</i></span><span class="k">热量</span></div>
   <div class="ms"><span class="v">{p['Q']:g}<i>g</i></span><span class="k">蛋白质</span></div>
   <div class="ms"><span class="v">{p['O']:g}<i>g</i></span><span class="k">油脂</span></div>
+  <span class="ms-est" title="{EST_TITLE}">估算</span>
  </div>{bars_html}
  <div class="mc-ai"><div class="ai-ava">🤖</div>
   <div class="ai-bub"><span class="ai-name">干饭小助手</span>
@@ -874,6 +995,247 @@ def comment_card(win, stars, tag, txt):
             f'<div class="cmt-top"><b>{win}</b><span class="stars">{star_html}</span></div>'
             f'<div class="cmt-txt">{txt}</div>'
             f'<div class="cmt-tags"><span class="tag">{tag}</span></div></div></div>')
+
+
+# ---------------- 决策小票 / 拆台模式 ----------------
+SPICE_CN = ['不辣', '微辣', '能吃辣']
+
+# 出餐自检 17 项：复用 engine/run_master.py 的断言（check_plan 逐套 + check_top3 三套整体），
+# 按违规信息前缀归成产品语言；前 6 项是小票主行展示的大项。
+SELF_CHECKS = [
+    ('预算', ('预算超支',)),
+    ('忌口', ('忌口命中',)),
+    ('辣度', ('辣度超限',)),
+    ('热量', ('能量出带',)),
+    ('同一食堂', ('跨食堂',)),
+    ('售罄', ('售罄窗口',)),
+    ('供应时段', ('时段不符',)),
+    ('蛋白', ('蛋白不足',)),
+    ('油脂', ('油超上限',)),
+    ('减脂不油炸', ('减脂含油炸',)),
+    ('现做≤1道', ('现做>1',)),
+    ('同名菜不重复', ('同名菜重复',)),
+    ('克重与计价', ('称重克重出带', '称重价不符', '克重与主表不符')),
+    ('套餐档位', ('档位基数不符', '套餐价未按档位入账')),
+    ('米饭入账', ('米饭未入', '米饭热量未入账')),
+    ('三套不重样', ('Top3 签名重复',)),
+    ('窗口口味分散', ('内容通道>2', '同窗口>2')),
+]
+SPREAD_CHECK = '窗口口味分散'
+
+
+def sig_code(sig):
+    """方案签名 → 6 位短码（同一方案无论现场算还是读出来，短码都一样）。"""
+    blob = json.dumps(sig, ensure_ascii=False, sort_keys=True, default=sorted)
+    return hashlib.sha1(blob.encode('utf-8')).hexdigest()[:6].upper()
+
+
+def self_check(idx, req, tops, quota=True):
+    """出餐自检（运行时）：对本次展示的方案逐套跑 run_master.check_plan、整体跑 check_top3，
+    违规信息按 SELF_CHECKS 前缀归到 17 项。quota=False（随机配 / 换一批本就不设分散配额）
+    或方案含「为凑满三套降级补位」时，分散项记为不适用（skipped），不计入分母。
+    返回 dict(total, passed, failed=[项], skipped=[项], extra=[未归类违规], n=方案数)。"""
+    import core
+    import run_master
+    tops = list(tops or [])
+    req = dict(req, taboo=set(req.get('taboo') or ()))
+    scen = core.resolve(req['scenario'], req.get('lazy', False))
+    msgs = []
+    for p in tops:
+        try:
+            msgs += run_master.check_plan(idx, req, scen, p)
+        except (KeyError, TypeError, ValueError) as e:      # 方案与主表对不上：如实记异常，不崩
+            msgs.append(f'数据对不上 {e!r}')
+    if tops:
+        hashable = [dict(p, sig=json.dumps(p['sig'], ensure_ascii=False, sort_keys=True, default=sorted))
+                    for p in tops]                          # 缓存读出的 sig 是 list，转成可哈希
+        msgs += run_master.check_top3(req, dict(top3=hashable))
+    skipped = [SPREAD_CHECK] if (not quota or any(p.get('degraded') for p in tops)) else []
+    failed = [name for name, pfx in SELF_CHECKS
+              if name not in skipped and any(m.startswith(pfx) for m in msgs)]
+    known = tuple(pf for _, pfx in SELF_CHECKS for pf in pfx)
+    extra = [m for m in msgs if not m.startswith(known)]
+    total = len(SELF_CHECKS) - len(skipped)
+    return dict(total=total, passed=total - len(failed), failed=failed, skipped=skipped,
+                extra=extra, n=len(tops))
+
+
+TABOO_ORDER = ['猪', '牛', '羊', '海鲜', '蛋', '奶', '花生', '芝麻', '麸质', '香菜', '内脏']
+
+
+def taboo_list(req):
+    """忌口按常用顺序排（猪牛羊…内脏），闭集外的排最后。"""
+    tb = set(req.get('taboo') or ())
+    return [t for t in TABOO_ORDER if t in tb] + sorted(tb - set(TABOO_ORDER))
+
+
+def _cn_count(n):
+    return {1: '一', 2: '两', 3: '三'}.get(n, str(n))
+
+
+def step_labels(req):
+    """小票「做了什么筛选」每一步的产品语言标签（键与 core.prefilter_trace 的 step key 对应）。"""
+    import core
+    taboo = taboo_list(req)
+    spice = SPICE_CN[max(0, min(2, int(req.get('spice_max', 2))))]
+    return dict(
+        period=f"{req['period']}餐 {req['asof']} 在售",
+        taboo=(f"去忌口（{'/'.join(taboo)}）" if len(taboo) <= 4 else f'去忌口（{len(taboo)} 项）')
+        if taboo else '去忌口（没忌口）',
+        spice=f'去超辣（只要{spice}）',
+        budget=f"去超预算（单道就超 {float(req['B']):g} 元）",
+        fried='减脂：不吃油炸',
+        lazy=f"懒人：步行+排队+出餐 ≤{core.PRM['T_LAZY']:g} 分钟",
+        other='其他条件')
+
+
+def bottleneck_text(req, trace):
+    """诚实页一句话诊断：筛到 0 道时指出卡在哪一步；还剩菜却凑不出整餐时如实说。"""
+    if trace['alive'] == 0:
+        worst = max(trace['steps'], key=lambda s: s['cut'], default=None)
+        if worst and worst['cut']:
+            label = step_labels(req).get(worst['key'], worst['label'])
+            return f'这回卡在「{label}」这一步：筛掉 {worst["cut"]} 道，一道不剩。'
+        return '这回筛到最后一道菜都不剩。'
+    return f'筛完还剩 {trace["alive"]} 道，但凑不出一顿过得了自检的整餐。'
+
+
+def receipt_html(req, src, trace, check, mode='fixed', n_plans=0, elapsed=None, avoid_n=0, twin=None):
+    """决策小票：①听懂了什么 ②做了什么筛选 ③出餐自检 ④为什么是这几套——产品语言、零算法词。
+    数字全部来自这一次的真实计算（trace=core.prefilter_trace，check=self_check）；文本一律转义。
+    mode：fixed 按条件配 / random 随机抽条件 / reshuffle 再换一批 / challenge 刁难卡 / twin 同句连点两次。"""
+    import core
+    e = html.escape
+    taboo = taboo_list(req)
+    spice = SPICE_CN[max(0, min(2, int(req.get('spice_max', 2))))]
+    t_lazy = core.PRM['T_LAZY']
+    chips = [req['scenario'], f"≤{float(req['B']):g} 元", f"{req['period']}餐 {req['asof']}",
+             req['anchor'], f'辣度：{spice}', ('忌：' + '/'.join(taboo)) if taboo else '没忌口']
+    if req.get('lazy'):
+        chips.append(f'懒人 ≤{t_lazy:g} 分钟')
+    chips_html = ''.join(f'<span>{e(str(c))}</span>' for c in chips)
+
+    labels = step_labels(req)
+    lines = [f'<div class="rc-line"><span class="rc-l">全部实采菜品</span><i></i>'
+             f'<b>{int(trace["total"])} 道</b><em></em></div>']
+    for s in trace['steps']:
+        lines.append(f'<div class="rc-line"><span class="rc-l">{e(labels.get(s["key"], s["label"]))}</span>'
+                     f'<i></i><b>{int(s["left"])}</b><em>−{int(s["cut"])}</em></div>')
+        if s.get('note'):
+            lines.append(f'<div class="rc-sub">{e(s["note"])}</div>')
+    lines.append(f'<div class="rc-line rc-sum"><span class="rc-l">剩下可选</span><i></i>'
+                 f'<b>{int(trace["alive"])} 道</b><em></em></div>')
+
+    n_cn = _cn_count(n_plans)
+    if not check or not check.get('n'):
+        chk = ('<div class="rc-check none"><b>未出餐</b><span>这次一套都没配出来，没有可检的方案——'
+               '宁可不出，也不出错的。</span></div>')
+    else:
+        ok = not check['failed'] and not check['extra']
+        badge = f"{check['passed']}/{check['total']} {'✓' if ok else '⚠'}"
+        big = '·'.join(name for name, _ in SELF_CHECKS[:6])
+        if ok:
+            body = f"{big} 等 {check['total']} 项，{n_cn}套逐项过"
+        else:
+            bad = check['failed'] + (['数据对不上'] if check['extra'] else [])
+            body = '未通过：' + '、'.join(bad) + '（如实显示，不遮掩）'
+        rest = '·'.join(name for name, _ in SELF_CHECKS[6:] if name not in check['skipped'])
+        note = f'其余各项：{rest}'
+        if check['skipped']:
+            why_skip = '随机挑的这批本就不设分散要求' if mode in ('random', 'reshuffle') else '为凑满三套主动放宽'
+            note += f"；「{'、'.join(check['skipped'])}」{why_skip}，不计入"
+        chk = (f'<div class="rc-check{"" if ok else " warn"}"><b>{e(badge)}</b><span>{e(body)}</span></div>'
+               f'<div class="rc-note">{e(note)}</div>')
+
+    alive = int(trace['alive'])
+    if n_plans == 0:
+        head = '为什么一套都没有'
+        if alive == 0:
+            worst = max(trace['steps'], key=lambda s: s['cut'], default=None)
+            where = (f"（卡在「{labels.get(worst['key'], worst['label'])}」这一步）"
+                     if worst and worst['cut'] else '')
+            why = f'筛到最后一道菜都不剩{where}。'
+        else:
+            why = f'剩下的 {alive} 道凑不出一顿过得了自检的整餐。'
+        why += '我不硬凑，也绝不偷偷放宽忌口和预算——换个条件再来。'
+    else:
+        head = f'为什么是这{n_cn}套'
+        if mode == 'twin' and twin:
+            t = ' / '.join(f"{r['elapsed']:g} 秒" for r in twin.get('runs', []))
+            why = (f'同一句话现场连算两遍（{t}），两遍的{n_cn}套逐套一致——同条件可复现。想看别的组合，点下方「再换一批」。'
+                   if twin.get('same') else f'同一句话现场连算两遍（{t}），两遍结果不一致——如实摆在上面，不遮掩。')
+        elif mode == 'challenge':
+            why = (f'刁难卡现场实算 {float(elapsed or 0):g} 秒得出（不读预存结果）；同样条件再算一遍还是这{n_cn}套，'
+                   '「同句连点两次」卡可当场验。想看别的组合，点下方「再换一批」。')
+        elif mode == 'random':
+            why = (f'这次的条件是随机抽的；在这组条件下挑了{n_cn}套彼此不重样的。'
+                   '想按固定条件配就拖一下快选条，想换一批点「再换一批」。')
+        elif mode == 'reshuffle':
+            why = f'这批是同一条件下随机换的{n_cn}套，每次点「再换一批」都不一样。'
+        else:
+            why = (f'从剩下的 {alive} 道里，挑口味、营养、价钱最能兼顾、彼此又不重样的{n_cn}套'
+                   + ('，并避开你近 7 天打卡吃过的组合' if avoid_n else '')
+                   + f'；同样的条件再配一次还是这{n_cn}套（可复现）。想看别的组合，点下方「再换一批」。')
+    sec = lambda no, title, body: (f'<div class="rc-sec"><div class="rc-h"><span class="rc-no">{no}</span>'
+                                   f'{e(title)}</div>{body}</div>')
+    return ('<div class="rcpt">'
+            + sec(1, '听懂了什么', f'<div class="rc-chips">{chips_html}</div>'
+                                  f'<div class="rc-note">来源：{e(src or "—")}</div>')
+            + sec(2, '做了什么筛选', ''.join(lines))
+            + sec(3, '出餐自检', chk)
+            + sec(4, head, f'<div class="rc-why">{e(why)}</div>')
+            + '<div class="rc-foot">— 本小票按这一次的真实计算生成 —</div></div>')
+
+
+# 拆台模式：给评委的刁难卡（题面走与用户完全相同的一句话解析；点卡＝no_cache 现场实算）
+CHALLENGES = [
+    dict(key='b5', ico='💸', title='预算 5 元', say='5块钱，中午吃饱', test='预算是硬上限，绝不超支'),
+    dict(key='taboo', ico='🚫', title='忌口叠满', say='不吃猪牛羊海鲜蛋奶花生芝麻麸质香菜内脏，20块',
+         test='11 项忌口一次全开'),
+    dict(key='night', ico='🌙', title='夜宵 23:00', say='晚上11点，宿舍区，想吃夜宵，20块',
+         test='过了售罄时点的窗口不推'),
+    dict(key='lazy', ico='🛋️', title='懒人 + 现做', say='赶时间，宿舍区，中午12点，想吃现做的热乎饭，20块',
+         test='步行+排队+现做出餐算进 15 分钟；「想吃现做」听不懂就不硬猜'),
+    dict(key='sold', ico='⏰', title='售罄时段', say='中午1点半，20块', test='13:30 多数窗口已过售罄时点'),
+    dict(key='twin', ico='🔁', title='同句连点两次', say='减脂，18块，不吃香菜', twin=True,
+         test='现场连算两遍，并排比对方案签名'),
+]
+CHALLENGE_BY_KEY = {c['key']: c for c in CHALLENGES}
+
+
+def challenge_intro_html():
+    return ('<div class="chal-intro">点任意一张＝<b>不读预存结果</b>、现场实算并显示耗时；配不出就进诚实页。'
+            '刁难卡按纯条件算（不带你的打卡记录），方便复现对照。</div>')
+
+
+def challenge_say_html(c):
+    return f'<div class="chal-say">「{html.escape(c["say"])}」· {html.escape(c["test"])}</div>'
+
+
+def _secs(x):
+    x = float(x or 0)
+    return '<0.01s' if x < 0.01 else f'{x:.2f}s'
+
+
+def challenge_banner_html(ch):
+    runs = ch.get('runs') or []
+    t = ' / '.join(_secs(r['elapsed']) for r in runs)
+    label = f'现场实算 {len(runs)} 遍 {t}' if len(runs) > 1 else f'现场实算 {t}'
+    return (f'<div class="chal-banner"><span>{html.escape(ch["ico"])} 刁难卡 <b>{html.escape(ch["title"])}</b>'
+            f' · 不读预存结果</span><span class="t">{html.escape(label)}</span></div>')
+
+
+def twin_html(ch):
+    """同句连点两次：两遍现场实算的方案签名并排（短码 + 价格），底部给一致/不一致结论。"""
+    cols = ''
+    for i, r in enumerate(ch.get('runs') or []):
+        rows = ''.join(f'<div class="twin-row"><span>{CIRC[j]} ¥{float(pr):g}</span>'
+                       f'<code>{html.escape(code)}</code></div>' for j, (code, pr) in enumerate(r['plans']))
+        cols += (f'<div class="twin-col"><div class="twin-h">第 {i + 1} 遍<span>{_secs(r["elapsed"])}</span></div>'
+                 f'{rows or "<div class=twin-row><span>（配不出）</span></div>"}</div>')
+    verdict = ('<div class="twin-ok">✓ 两遍的方案签名逐套一致 · 同条件可复现</div>' if ch.get('same')
+               else '<div class="twin-bad">✗ 两遍结果不一致（如实显示）</div>')
+    return f'<div class="twin"><div class="twin-g">{cols}</div>{verdict}</div>'
 
 
 # ---------------- 关于 / 诚实边界 ----------------
@@ -898,6 +1260,17 @@ def about_cards(n_dishes, n_windows, n_std):
                           '满分 100；换了条件候选池就变了，<b>跨条件不可直接比较</b>。'),
         ('⚡', '解释从哪来', '随机配与「再换一批」的解释由<b>规则模板</b>生成（不调用大模型，以保住 1–2 秒体验）；'
                         '首次配饭的解析与解释才走大模型（无 Key 时全部规则兜底）。'),
+        ('🔢', '这个数字怎么来的', '方案卡四宫格里，<b>价格是实采菜价</b>（称重菜＝单价 × 建议克数）；'
+                              '热量 / 蛋白质 / 油脂对每道菜都用<b>同一套算式</b>：标准菜名 → 主料构成 × '
+                              '《中国食物成分表》→ 按烹饪方式与用油系数修正（麦当劳的热量 / 蛋白用官方公示值，'
+                              '油脂不单列计入）。'
+                              '克重与油克系数在主表来源列标「待实测」，所以这几个数带「估算」角标——'
+                              '<b>仅供参考，非医疗建议</b>。'),
+        ('🧾', '决策小票', '每次出餐，三张方案卡上方都有「🧾 这顿怎么配出来的」：听懂了什么、一步步筛掉了多少菜、'
+                        '出餐自检过了几项、为什么是这三套——小票上的数都是这一次的真实计算。'),
+        ('🧪', '给评委的刁难卡', '「配饭」页「🧪 给评委的刁难卡」共 6 张：预算 5 元 / 忌口叠满 / 夜宵 23:00 / '
+                            '懒人+现做 / 售罄时段 / 同句连点两次。点卡即<b>不读预存结果、现场实算并显示耗时</b>；'
+                            '配不出就进诚实页；同句连点两次会并排比对两遍的方案签名。'),
     ]
 
 

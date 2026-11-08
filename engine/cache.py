@@ -82,11 +82,13 @@ class PlanCache:
             pass
 
 
-def solve(bundle, req, cache=None, llm=None, avoid=(), origin='solve'):
+def solve(bundle, req, cache=None, llm=None, avoid=(), origin='solve', no_cache=False):
     """统一入口：先查缓存（只命中确定性条目），未命中实时求解并回写。
-    origin 透传给 cache.put（预生成走 'pregen'）。返回 (res, reasons, meta)。"""
+    origin 透传给 cache.put（预生成走 'pregen'）。返回 (res, reasons, meta)。
+    no_cache=True（拆台模式 / 刁难卡）：不读也不写缓存，强制现场实时求解——既不拿预存答案
+    充数，也不让现场结果覆盖预生成条目（键算法与已有条目原样不动）；meta 带 no_cache=True。"""
     cache = cache if cache is not None else PlanCache()
-    if not avoid:
+    if not avoid and not no_cache:
         ent = cache.get(req)
         if ent:
             return ent['res'], ent['reasons'], dict(hit=True, elapsed=0.0, key=req_key(req))
@@ -95,6 +97,9 @@ def solve(bundle, req, cache=None, llm=None, avoid=(), origin='solve'):
     reasons = nl_agent.explain(req, res, llm=llm)
     el = round(time.time() - t0, 2)
     res = jsonable(res)
-    if not avoid:
+    if not avoid and not no_cache:
         cache.put(req, res, reasons, origin=origin)
-    return res, reasons, dict(hit=False, elapsed=el, key=req_key(req))
+    meta = dict(hit=False, elapsed=el, key=req_key(req))
+    if no_cache:
+        meta['no_cache'] = True
+    return res, reasons, meta

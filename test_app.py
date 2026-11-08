@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """test_app.py —— UI 全流程冒烟 + 三态入口 / 滑动快选条 / 无解重试 / 关于披露回归
-覆盖：首屏 → NL输入出Top3 → 同句二连击确定性重解 → 打卡周报 → 随机明示轮换
-      → 再换一批换新 → 快选条辣度生效 / NL 回填点亮快选条 → 无解页一键重试 → 关于页披露。
+覆盖：首屏 → NL输入出Top3 → 决策小票（四行/对账/自检/零算法词）→ 同句二连击确定性重解 → 打卡周报
+      → 随机明示轮换 → 再换一批换新 → 快选条辣度生效 / NL 回填点亮快选条 → 无解页一键重试
+      → 拆台模式 6 张刁难卡（no_cache 现场实算 / 诚实页 / 二连击签名一致 / 缓存零写入）→ 关于页披露。
 跑前自动备份 data/checkins.json 与 cache/plans.json 到系统临时目录，跑完恢复
 （cache 恢复为 pregen 的 51 条确定性条目，测试写入的 rand:/solve 条目全部清掉）。
 用法: python test_app.py
@@ -105,6 +106,40 @@ def top3_sigs(at):
     return tuple(str(p['sig']) for p in at.session_state.res['top3'])
 
 
+# 小票「零算法词」：产品语言里不许出现的实现/算法术语
+ALGO_WORDS = ('MILP', 'TOPSIS', 'CBC', '求解', '缓存', '算法', '权重', '约束', '松弛', '优化', '哈希', 'trace')
+
+
+def receipt_text(at):
+    """结果区决策小票（🧾 这顿怎么配出来的）的纯文本；没有小票返回空串。"""
+    import re as _re
+    blocks = [m.value for m in at.markdown if 'class="rcpt"' in m.value]
+    if not blocks:
+        return ''
+    return _re.sub(r'\s+', ' ', _re.sub(r'<[^>]+>', ' ', blocks[-1])).strip()
+
+
+def assert_receipt(at, where):
+    """小票四行齐全、数字与本次结果对账、自检全过（N/N ✓）或未出餐、零算法词。"""
+    import re as _re
+    assert any('这顿怎么配出来的' in e.label for e in at.expander), f'{where}：结果区应有决策小票折叠块'
+    rc = receipt_text(at)
+    for k in ('听懂了什么', '做了什么筛选', '出餐自检', '来源：'):
+        assert k in rc, f'{where}：小票缺「{k}」'
+    assert '为什么是这' in rc or '为什么一套都没有' in rc, f'{where}：小票缺第④行'
+    res = at.session_state.res
+    assert '全部实采菜品 719 道' in rc, f'{where}：小票首行应为 719 道全集'
+    assert f'剩下可选 {res.get("alive", 0)} 道' in rc, f'{where}：小票末行可选数应与结果 alive 对账'
+    if res['top3']:
+        m = _re.search(r'出餐自检 (\d+)/(\d+) ✓', rc)
+        assert m and m.group(1) == m.group(2), f'{where}：出餐自检应逐项全过，实为 {rc}'
+    else:
+        assert '未出餐' in rc, f'{where}：0 套时自检应如实写「未出餐」'
+    bad = [w for w in ALGO_WORDS if w in rc]
+    assert not bad, f'{where}：小票出现算法词 {bad}'
+    return rc
+
+
 def backup():
     tmpdir = tempfile.mkdtemp(prefix='ganfan_test_backup_')
     saved = {}
@@ -153,6 +188,12 @@ def run_checks():
     assert '缓存命中' in meta_html or '实时求解' in meta_html, 'ⓘ 悬停里应带缓存命中/耗时细节'
     assert '缓存命中' not in meta_body and '实时求解' not in meta_body, 'meta 实现细节不应出现在正文'
     print('NL→Top3 ✓', [round(p['PI'], 2) for p in res['top3']], 'meta=', at.session_state.meta)
+
+    # ---- 决策小票：三卡上方可折叠「🧾 这顿怎么配出来的」，四行产品语言 + 本次真实数字 ----
+    rc = assert_receipt(at, 'NL 首解')
+    assert '忌口（猪）' in rc and ('规则解析' in rc or '大模型解析' in rc), '小票①②应带条件与解析来源'
+    assert 'class="ms-est"' in md_now and '估算' in md_now, '方案卡四宫格应带「估算」角标'
+    print('决策小票 ✓', rc[rc.find('做了什么筛选'):rc.find('出餐自检')][:120], '…')
 
     # ---- 同句二连击：面板未脏 → 按上次解析条件确定性重解，结果一致、rand_note 为空 ----
     click_button(at, '🍽️ 一键配饭')
@@ -228,6 +269,9 @@ def run_checks():
     assert at.session_state.res is not None and not at.session_state.res['top3'], '应配不出（0 套）'
     assert has_button(at, '预算 +3 元重试'), '无解页应有「预算 +3 元重试」按钮'
     assert has_button(at, '去掉忌口重试'), '无解页应有「去掉忌口重试」按钮'
+    rc = assert_receipt(at, '无解页')
+    assert '为什么一套都没有' in rc, '0 套时小票④应改问「为什么一套都没有」'
+    assert any('卡在「' in m.value for m in at.markdown if 'class="meal-card' in m.value), '诚实页应指出卡在哪一步'
     print('无解页重试按钮 ✓ B=', at.session_state.req['B'], '忌口', len(at.session_state.req['taboo']), '项')
 
     click_button(at, '💰 预算 +3 元重试')
@@ -257,6 +301,7 @@ def run_checks():
         sigs.append(tuple(str(p['sig']) for p in res['top3']))
         assert all(f'cheat_{j}' not in at.session_state or not at.session_state[f'cheat_{j}']
                    for j in range(3)), '随机新解应清空放纵勾选'
+        assert '随机抽的' in assert_receipt(at, f'随机配第{i+1}次'), '随机配的小票④应说明条件是随机抽的'
     for a, b in zip(sigs, sigs[1:]):
         assert a != b, '相邻两次随机配给出了相同方案'
     print('随机配轮换 ✓ 相邻两次各不相同（连点 3 次）+ 随机条件明示')
@@ -271,7 +316,42 @@ def run_checks():
     assert after and after != before, '换一批后方案应不同'
     assert all(f'cheat_{j}' not in at.session_state or not at.session_state[f'cheat_{j}']
                for j in range(3)), '换一批应清空放纵勾选'
+    assert '随机换的' in receipt_text(at), '再换一批后小票④应说明是同条件随机换的一批'
     print('再换一批 ✓ 三套已换新 + 放纵勾选已清')
+
+    # ---- 拆台模式：6 张刁难卡逐张点 → no_cache 现场实算（不读不写缓存）、明示耗时、不崩；
+    #      夜宵 23:00 无解进诚实页；同句连点两次并排比对两遍方案签名一致 ----
+    heal_stale_widgets(at)
+    at.run()
+    assert any('给评委的刁难卡' in e.label for e in at.expander), '应有「🧪 给评委的刁难卡」入口'
+    keys_before = set(json.load(open(PLANS, encoding='utf-8')))
+    for c in H.CHALLENGES:
+        heal_stale_widgets(at)
+        at.button(key=f"chal_{c['key']}").click()
+        at.run()
+        assert not at.exception, f"刁难卡「{c['title']}」异常: {at.exception}"
+        meta, ch, res = at.session_state.meta, at.session_state.challenge, at.session_state.res
+        assert meta.get('no_cache') and not meta['hit'], f"刁难卡「{c['title']}」应强制现场实算（no_cache）"
+        assert ch and ch['key'] == c['key'] and ch['runs'], '应记录本张刁难卡的实算轮次'
+        assert at.text_input[0].value == c['say'], '刁难卡题面应回显在输入框'
+        banner = next((m.value for m in at.markdown if 'class="chal-banner"' in m.value), '')
+        assert '现场实算' in banner and '不读预存结果' in banner, '结果区应明示现场实算耗时'
+        rc = assert_receipt(at, f"刁难卡「{c['title']}」")
+        if c['key'] == 'night':
+            assert not res['top3'], '夜宵 23:00：该时段已无在售菜，应进诚实页'
+            assert any('这条件下真的配不出来' in m.value for m in at.markdown), '无解应显示诚实页'
+            assert '已过一般售罄时点' in rc, '小票②应写明多少道已过售罄时点'
+        if c['key'] == 'sold':
+            assert '已过一般售罄时点' in rc, '售罄时段卡：小票②应写明售罄筛掉多少'
+        if c.get('twin'):
+            assert len(ch['runs']) == 2 and ch['same'], '同句连点两次：两遍方案签名应逐套一致'
+            assert ch['runs'][0]['plans'] == ch['runs'][1]['plans'] and ch['runs'][0]['plans']
+            assert any('class="twin-ok"' in m.value for m in at.markdown), '应并排显示两遍签名并给出一致结论'
+        print(f"刁难卡 ✓ {c['title']}: {len(res['top3'])} 套 / 可选 {res.get('alive', 0)} 道 / "
+              f"实算 {' + '.join(str(r['elapsed']) + 's' for r in ch['runs'])}")
+    keys_after = set(json.load(open(PLANS, encoding='utf-8')))
+    assert keys_after == keys_before, 'no_cache 现场实算不应读写缓存（不覆盖预生成条目）'
+    print('拆台模式 ✓ 6 张刁难卡全部现场实算、缓存零写入')
 
     # ---- 关于页：三条诚实披露 ----
     # 「再换一批」成功路径带 st.rerun：AppTest 元素树可能残留旧一批方案卡上已被
@@ -284,7 +364,10 @@ def run_checks():
     assert '候选池内的相对位置' in md and '跨条件不可直接比较' in md, '关于页应披露三维分数口径'
     assert '规则模板' in md and '大模型' in md, '关于页应披露解释生成链路'
     assert '满分 100' in md, '三维条形应带「满分 100」小注'
-    print('关于页披露 ✓（宽容带 / 三维口径 / 解释链路 / 满分100）')
+    assert '这个数字怎么来的' in md and '同一套算式' in md and '待实测' in md and '非医疗建议' in md, \
+        '关于页应有「这个数字怎么来的」小卡（同一套算式 / 待实测 / 非医疗建议）'
+    assert '给评委的刁难卡' in md and '决策小票' in md, '关于页应介绍刁难卡与决策小票'
+    print('关于页披露 ✓（宽容带 / 三维口径 / 解释链路 / 满分100 / 数字怎么来的 / 刁难卡）')
 
     # ---- chips 中文化（解析来源不再出现 rule/llm 英文）----
     assert 'rule 解析' not in md and 'llm 解析' not in md, '解析来源应显示中文（规则解析/大模型解析）'

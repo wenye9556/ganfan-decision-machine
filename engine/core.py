@@ -97,6 +97,47 @@ def prefilter(bundle, req, scen):
     return alive
 
 
+def prefilter_trace(bundle, req, scen):
+    """只读计数（决策小票「做了什么筛选」用）：按产品口径逐步统计硬过滤后还剩几道菜。
+    不改 prefilter 的行为与签名——各步谓词与 prefilter 逐条同义，只是换成讲故事的顺序
+    逐步计数（各条件是「且」关系，顺序不影响最终集合）。最终数直接取 len(prefilter(...))；
+    万一将来两边谓词漂移，差额如实记为「其他条件」一步，小票上的数永远对得上账。
+    返回 dict(total=全部菜数, steps=[dict(key, label, left, cut, note)], alive=最终可选数)。"""
+    req = dict(req, taboo=set(req.get('taboo') or ()))
+    t_now = _t(req['asof'])
+    lazy_on = scen['Tmax'] is not None
+    rows = list(bundle['dishes'])
+    steps = []
+
+    def _step(key, label, keep, shown=True, note=''):
+        nonlocal rows
+        before = len(rows)
+        rows = [d for d in rows if keep(d)]
+        if shown or len(rows) != before:
+            steps.append(dict(key=key, label=label, left=len(rows), cut=before - len(rows), note=note))
+
+    in_period = [d for d in rows if req['period'] in d['periods']]
+    n_sold = sum(1 for d in in_period if d['soldout'] and t_now >= _t(d['soldout']))
+    _step('period', '该时段在售',
+          lambda d: req['period'] in d['periods'] and not (d['soldout'] and t_now >= _t(d['soldout'])),
+          note=(f'其中 {n_sold} 道已过一般售罄时点' if n_sold else ''))
+    _step('taboo', '去忌口', lambda d: not (d['taboo'] & req['taboo']))
+    _step('spice', '去超辣', lambda d: d['spice'] <= req['spice_max'], shown=req['spice_max'] < 2)
+    _step('budget', '去超预算',
+          lambda d: not ((d['pricing'] in ('单品', '按份', '套餐SKU') and d['price'] > req['B'])
+                         or (d['pricing'] == '称重' and d['rho'] * 0.5 * d['wref'] > req['B'])))
+    _step('fried', '减脂不吃油炸', lambda d: not (scen['ban_fried'] and d['cook'] == '油炸'),
+          shown=bool(scen['ban_fried']))
+    _step('lazy', '懒人限时',
+          lambda d: not lazy_on or (_walk(bundle, req['anchor'], d['canteen'])
+                                    + _wait(bundle, d['canteen'], req['asof']) + d['make_min'] <= scen['Tmax']),
+          shown=lazy_on)
+    alive = len(prefilter(bundle, req, scen))
+    if alive != len(rows):
+        steps.append(dict(key='other', label='其他条件', left=alive, cut=len(rows) - alive, note=''))
+    return dict(total=len(bundle['dishes']), steps=steps, alive=alive)
+
+
 def _mm(vals):
     lo, hi = min(vals), max(vals)
     if hi - lo < PRM['EPS_DIM']: return [0.5] * len(vals)

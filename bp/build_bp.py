@@ -109,6 +109,9 @@ td { font-size:11.5px; padding:6px 8px; border-bottom:1px solid #F0E2D0; line-he
 .ps-item:first-of-type { border-top:none; padding-top:2px; }
 .ps-item b { display:block; font-size:10.5px; color:#C96428; }
 .ps-item span { display:block; font-size:9.5px; line-height:1.55; color:#7A6350; margin-top:2px; }
+.est-wrap { position:relative; }
+.est { position:absolute; top:8px; right:0; font-size:8.5px; font-weight:800; letter-spacing:.5px; color:#A8741A;
+  background:#FDF0DA; border:1px solid #F3DDB4; border-radius:0 0 0 7px; padding:0 5px; line-height:1.5; }
 """
 
 P = []
@@ -166,22 +169,23 @@ page(f"""
 page(f"""
 <h2>02 · 解决方案：说一句话，给你三套整餐</h2>
 <p class="lead">「减脂，18块，不吃香菜」——AI Agent 听懂这句话，在 {stats['dishes']} 道真实菜品里，
-同时掂量预算、忌口、辣度、场景营养带、油克、排队与多样性，端出 <b>Top3 整餐方案卡</b>。</p>
+同时掂量预算、忌口、辣度、场景营养带、油克与多样性，并参考排队与售罄风险（时点待实测），端出 <b>Top3 整餐方案卡</b>。</p>
 <div class="flow">
 <div class="step"><b>用户输入</b><span>一句话 / 手动条件<br>场景·预算·忌口·时段</span></div><div class="arr">→</div>
 <div class="step"><b>AI Agent 理解</b><span>NL→结构化请求<br>(LLM / 规则双通道)</span></div><div class="arr">→</div>
-<div class="step"><b>Agent 调用工具</b><span>整餐搭配引擎<br>缓存命中 &lt;0.1s</span></div><div class="arr">→</div>
+<div class="step"><b>Agent 调用工具</b><span>调用整餐搭配引擎<br>（现场可验）</span></div><div class="arr">→</div>
 <div class="step"><b>输出</b><span>三套方案卡+一句解释<br>诚实降级标签</span></div>
 </div>
 <h3>一套方案长这样（真实引擎输出）</h3>
 <div class="grid2">
 <div><img class="ui-shot" src="{IMGS['plan1']}"></div>
 <div>
-<table class="nutri"><tr><th>价格</th><th>热量</th><th>蛋白</th><th>油</th></tr>
-<tr><td>{p1['PI']} 元</td><td>{p1['E']} kcal</td><td>{p1['Q']} g</td><td>{p1['O']} g</td></tr></table>
+<div class="est-wrap"><table class="nutri"><tr><th>价格</th><th>热量</th><th>蛋白</th><th>油</th></tr>
+<tr><td>{p1['PI']} 元</td><td>{p1['E']} kcal</td><td>{p1['Q']} g</td><td>{p1['O']} g</td></tr></table><span class="est">估算</span></div>
 <p>{'、'.join(it['name'] for it in p1['items'])}（{p1['cant'][0]}）　<span class="tag">营养能打</span></p>
 <p class="small">{plans['减脂']['reasons'][0]}</p>
-<div class="warn" style="margin-top:8px">数字用「营养成分表」式小标签呈现：价格、热量、蛋白、油克，一眼可核对。</div>
+<div class="warn" style="margin-top:8px">数字用「营养成分表」式小标签呈现：价格、热量、蛋白、油克，一眼可核对。
+价格为实采；热量 / 蛋白 / 油按同一套算式估算（来源列待实测，带「估算」角标），非医疗建议。</div>
 </div></div>
 <h3>为什么是三套，而不是一套</h3>
 <p>不同窗口 / 不同食堂 / 普通与按克自选各留席位，同质方案强制排他——
@@ -397,7 +401,7 @@ page(f"""
 <tr><td>数据服务</td><td>团餐企业 / 智慧食堂系统的菜单-营养-决策数据接口</td><td>按调用量 / 项目制</td></tr>
 </table>
 <h3>单位经济（粗算）</h3>
-<p>单校落地成本 ≈ 采集模板复用 + 1 人日/校区校准；边际成本主要是采集与标注。
+<p>单校落地成本：首校实采 4–5 人日 / 模板复用后单校校准 ≈1 人日；边际成本主要是采集与标注。
 C 端零获客成本（食堂门口即是流量入口），B 端以"窗口数据看板"为付费锚点，先单校验证，再多校复制。</p>
 <h3>首年要验证的三个假设（与里程碑对应）</h3>
 <div class="grid3">

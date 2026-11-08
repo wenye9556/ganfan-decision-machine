@@ -19,6 +19,7 @@ import loader
 import core
 import nl_agent
 import cache as C
+import run_master
 import app_helpers as H
 
 st.set_page_config(page_title='干饭决策机', page_icon='🍚', layout='centered')
@@ -35,6 +36,7 @@ SPICE_LABEL = ['不辣', '微辣', '能吃辣']
 ANCHOR_OPTS = ['图书馆', '教学楼', '宿舍区']
 PARSER_CN = {'rule': '规则解析', 'llm': '大模型解析'}
 BUDGET_CAP = 50          # 预算重试按钮在此上限内生效；快选滑杆只能表达 10–30，出界以滑杆边界显示
+SRC_QUICK = '快选条（按你拖 / 点的条件）'
 
 
 @st.cache_resource
@@ -47,11 +49,18 @@ def get_cache():
     return C.PlanCache(writeback=True)
 
 
+@st.cache_resource
+def get_index():
+    """出餐自检用的菜品索引（与 engine/run_master.py 断言电池同一份）。"""
+    return run_master.dish_index(get_bundle())
+
+
 bundle = get_bundle()
 pc = get_cache()
 
 for k, v in dict(req=None, res=None, reasons=[], meta=None, last_nl='', parsed_note='',
-                rand_note='', last_parsed_req=None, manual_dirty=False).items():
+                rand_note='', last_parsed_req=None, manual_dirty=False,
+                req_src='', nl_src='', pick_mode='fixed', avoid_n=0, challenge=None).items():
     st.session_state.setdefault(k, v)
 for k, v in dict(scen='均衡', budget=18, period='午 餐', asof='12:30', anchor='图书馆',
                  spice=2, lazy=False).items():
@@ -80,8 +89,9 @@ def recent_avoid(days=7):
     return meals
 
 
-def do_solve(req, avoid=None):
-    """avoid=None → 自动带上近 7 天打卡史（换着吃）；显式传 () 可退回无回避求解。"""
+def do_solve(req, avoid=None, src=None):
+    """avoid=None → 自动带上近 7 天打卡史（换着吃）；显式传 () 可退回无回避求解。
+    src：决策小票「听懂了什么」的条件来源（None=沿用上一次）。"""
     req = nl_agent.sanitize(req)
     if avoid is None:
         avoid = recent_avoid()
@@ -92,11 +102,20 @@ def do_solve(req, avoid=None):
     st.session_state.res = res
     st.session_state.reasons = reasons
     st.session_state.meta = meta
+    st.session_state.pick_mode = 'fixed'
+    st.session_state.avoid_n = len(avoid)
+    st.session_state.challenge = None
+    if src is not None:
+        st.session_state.req_src = src
 
 
 def do_solve_random(req):
     """随机条件路径：先查随机命名空间缓存（同条件可复现）；未命中用解空间采样
     （1–2s）并回写 rand: 命名空间（origin='random'，永不遮蔽确定性键）。"""
+    st.session_state.pick_mode = 'random'
+    st.session_state.req_src = '随机抽条件（没输入、也没碰快选条）'
+    st.session_state.avoid_n = 0
+    st.session_state.challenge = None
     ent = pc.get(req, origin='random')
     if ent:
         st.session_state.req = nl_agent.sanitize(req)
@@ -117,6 +136,50 @@ def do_solve_random(req):
     st.session_state.meta = dict(hit=False, elapsed=rres['elapsed'], key=C.req_key(req, origin='random'))
     clear_cheats()
     pc.put(req, rres, reasons, origin='random')
+
+
+def parsed_note_of(req, pmeta):
+    """NL 解析结果 → 「听懂啦」一行说明（chips 渲染见 parsed_chips_html）。"""
+    return (f"听懂啦：{req['scenario']} · {req['B']:g}元 · {req['period']}{req['asof']} · "
+            f"{req['anchor']} · 辣度{SPICE_LABEL[req['spice_max']]}"
+            + (f" · 忌{'/'.join(sorted(req['taboo']))}" if req['taboo'] else '')
+            + (' · 懒人模式' if req['lazy'] else '')
+            + f"（{PARSER_CN.get(pmeta['parser'], pmeta['parser'])}）")
+
+
+def run_challenge(key):
+    """拆台模式：刁难卡题面走与用户完全相同的一句话解析 → 回填快选条 → no_cache 现场实算
+    （不读也不写缓存、不带打卡记录 avoid）；「同句连点两次」连算两遍并排比对方案签名。
+    须在快选 widgets 实例化之前调用（配饭页顶部 pending_challenge 处）。"""
+    c = H.CHALLENGE_BY_KEY[key]
+    req, pmeta = nl_agent.parse(c['say'])
+    req = nl_agent.sanitize(req)
+    parser = PARSER_CN.get(pmeta['parser'], pmeta['parser'])
+    st.session_state.last_nl = c['say']
+    st.session_state.parsed_note = parsed_note_of(req, pmeta)
+    st.session_state.rand_note = ''
+    st.session_state.last_parsed_req = req
+    st.session_state.nl_src = f'一句话 · {parser}'
+    apply_req_to_panel(req)
+    st.session_state.manual_dirty = False
+    runs = []
+    n_runs = 2 if c.get('twin') else 1
+    for i in range(n_runs):
+        msg = f'🧪 不读预存结果，现场实算中（第 {i + 1}/{n_runs} 遍）…' if n_runs > 1 else '🧪 不读预存结果，现场实算中…'
+        with st.spinner(msg):
+            res, reasons, meta = C.solve(bundle, req, cache=pc, avoid=(), no_cache=True)
+        runs.append(dict(elapsed=meta['elapsed'],
+                         plans=[(H.sig_code(p['sig']), p['PI']) for p in res.get('top3', [])]))
+    clear_cheats()
+    st.session_state.req = req
+    st.session_state.res = res
+    st.session_state.reasons = reasons
+    st.session_state.meta = meta
+    st.session_state.avoid_n = 0
+    st.session_state.pick_mode = 'twin' if c.get('twin') else 'challenge'
+    st.session_state.req_src = f"刁难卡「{c['title']}」· 一句话 · {parser}"
+    st.session_state.challenge = dict(key=key, ico=c['ico'], title=c['title'], twin=bool(c.get('twin')),
+                                      runs=runs, same=len({tuple(r['plans']) for r in runs}) == 1)
 
 
 def apply_req_to_panel(req):
@@ -198,14 +261,17 @@ tab_meal, tab_week, tab_comment, tab_about = st.tabs(['🍚 配饭', '📅 周�
 
 # ---------------- 配饭 ----------------
 with tab_meal:
-    # 回填快选条只能在快选 widgets 实例化之前做：NL 新句子 / 无解页一键重试都只在按钮处
-    # 存 pending_req 并立即 rerun，由这里（位于所有 widgets 之前）回填 + 求解。
+    # 回填快选条只能在快选 widgets 实例化之前做：NL 新句子 / 无解页一键重试 / 刁难卡都只在按钮处
+    # 存 pending_req（或 pending_challenge）并立即 rerun，由这里（位于所有 widgets 之前）回填 + 求解。
     pending = st.session_state.pop('pending_req', None)
     if pending is not None:
         apply_req_to_panel(pending)
         st.session_state.manual_dirty = bool(st.session_state.pop('pending_dirty', True))
         st.session_state.rand_note = ''
-        do_solve(pending)
+        do_solve(pending, src=st.session_state.pop('pending_src', SRC_QUICK))
+    pending_chal = st.session_state.pop('pending_challenge', None)
+    if pending_chal in H.CHALLENGE_BY_KEY:
+        run_challenge(pending_chal)
 
     st.markdown('<div class="ask-row"><div class="ask-ava">🍚</div>'
                 '<div class="ask-bubble"><b>跟我说说今天想吃啥</b>'
@@ -256,24 +322,21 @@ with tab_meal:
         if new_input:
             req, pmeta = nl_agent.parse(nl)
             st.session_state.last_nl = nl.strip()
-            st.session_state.parsed_note = (
-                f"听懂啦：{req['scenario']} · {req['B']:g}元 · {req['period']}{req['asof']} · "
-                f"{req['anchor']} · 辣度{SPICE_LABEL[req['spice_max']]}"
-                + (f" · 忌{'/'.join(sorted(req['taboo']))}" if req['taboo'] else '')
-                + (' · 懒人模式' if req['lazy'] else '')
-                + f"（{PARSER_CN.get(pmeta['parser'], pmeta['parser'])}）")
+            st.session_state.parsed_note = parsed_note_of(req, pmeta)
             st.session_state.rand_note = ''
             st.session_state.manual_dirty = False               # NL 回填不算手动配置
             st.session_state.last_parsed_req = req              # 记住条件：同句二连击确定性重解用
+            st.session_state.nl_src = f"一句话 · {PARSER_CN.get(pmeta['parser'], pmeta['parser'])}"
             # 快选条在按钮上方、本轮已实例化 → 回填点亮须走 pending + rerun（见本页顶部）
             st.session_state.pending_dirty = False
+            st.session_state.pending_src = st.session_state.nl_src
             st.session_state.pending_req = req
             st.rerun()
         elif same_text and not manual_dirty:
             # 同句二连击：快选条没动过 → 按「上次 NL 解析出的条件」确定性重解（缓存命中秒出）
             req = st.session_state.last_parsed_req or manual_req()
             st.session_state.rand_note = ''
-            do_solve(req)
+            do_solve(req, src=st.session_state.nl_src or '一句话')
         elif not has_text and not manual_dirty:
             req = random_req()                          # 空输入且从未碰快选条 → 随机抽条件
             st.session_state.rand_note = (
@@ -285,7 +348,7 @@ with tab_meal:
             # 空输入+快选条动过，或同句+快选条动过 → 以快选条（+高级微调）为准，确定性解
             st.session_state.rand_note = ''
             st.session_state.parsed_note = ''
-            do_solve(manual_req())
+            do_solve(manual_req(), src=SRC_QUICK)
 
     if not has_text:
         if manual_dirty:
@@ -319,6 +382,18 @@ with tab_meal:
         c3.text_input('时间', key='asof', help='HH:MM，用于售罄与排队判定', on_change=mark_manual)
         c4.checkbox('🛋️ 懒人模式', key='lazy', help='到坐上桌 ≤15 分钟', on_change=mark_manual)
 
+    # ---------------- 拆台模式：给评委的刁难卡（点卡＝no_cache 现场实算） ----------------
+    with st.expander('🧪 给评委的刁难卡（6 张 · 点卡＝现场实算）'):
+        st.markdown(H.challenge_intro_html(), unsafe_allow_html=True)
+        for row in range(0, len(H.CHALLENGES), 2):              # 每行两张，行内对齐
+            for col, c in zip(st.columns(2), H.CHALLENGES[row:row + 2]):
+                with col:
+                    if st.button(f"{c['ico']} {c['title']}", key=f"chal_{c['key']}",
+                                 use_container_width=True):
+                        st.session_state.pending_challenge = c['key']    # 快选条已实例化 → 顶部回填 + 实算
+                        st.rerun()
+                    st.markdown(H.challenge_say_html(c), unsafe_allow_html=True)
+
     res, reasons, meta = st.session_state.res, st.session_state.reasons, st.session_state.meta
     if res is None:
         st.markdown(f"""<div class="empty"><div class="empty-art"><span>🍚</span><span>🍗</span><span>🥬</span></div>
@@ -337,11 +412,32 @@ with tab_meal:
             st.markdown(H.hint_html(f'🎲 本次随机条件：{st.session_state.rand_note} —— 想换就点下方「再换一批」'),
                         unsafe_allow_html=True)
         tops = res.get('top3', [])
+        rq = st.session_state.req
+        chal = st.session_state.get('challenge')
+        mode = st.session_state.get('pick_mode') or 'fixed'
+        if chal:
+            st.markdown(H.challenge_banner_html(chal), unsafe_allow_html=True)
+            if chal.get('twin'):
+                st.markdown(H.twin_html(chal), unsafe_allow_html=True)
+        trace = None
+        if rq:
+            # 决策小票：数字全部按这一次的真实条件现算（硬过滤逐步计数 + 断言电池运行时自检）
+            trace = core.prefilter_trace(bundle, rq, core.resolve(rq['scenario'], rq.get('lazy', False)))
+            check = (H.self_check(get_index(), rq, tops, quota=mode not in ('random', 'reshuffle'))
+                     if tops else None)
+            el = chal['runs'][-1]['elapsed'] if chal and chal.get('runs') else (meta or {}).get('elapsed')
+            with st.expander('🧾 这顿怎么配出来的', expanded=bool(chal)):
+                st.markdown(H.receipt_html(rq, st.session_state.get('req_src') or SRC_QUICK, trace, check,
+                                           mode=mode, n_plans=len(tops), elapsed=el,
+                                           avoid_n=st.session_state.get('avoid_n', 0),
+                                           twin=chal if mode == 'twin' else None),
+                            unsafe_allow_html=True)
         if not tops:
-            st.markdown("""<div class="meal-card"><div class="mc-head"><div class="mc-idx">🥲</div>
+            diag = html.escape(H.bottleneck_text(rq, trace)) if (rq and trace) else ''
+            st.markdown(f"""<div class="meal-card"><div class="mc-head"><div class="mc-idx">🥲</div>
             <div class="mc-headl"><div class="mc-l1"><b>这条件下真的配不出来，我不想糊弄你。</b></div></div></div>
             <div class="mc-ai"><div class="ai-ava">🤖</div><div class="ai-bub"><span class="ai-name">干饭小助手</span>
-            <div class="ai-txt">试试：① 预算加 2–5 元 ② 辣度放宽一档 ③ 换个时段
+            <div class="ai-txt">{diag}试试：① 预算加 2–5 元 ② 辣度放宽一档 ③ 换个时段
             ④ 减少忌口项。忌口与预算上限我绝不会偷偷放宽。</div></div></div></div>""", unsafe_allow_html=True)
             # 一键改条件重试：把「配不出」的挫败路径变成演示亮点（改条件 → 重新配）。
             fail_req = st.session_state.req or {}
@@ -355,6 +451,7 @@ with tab_meal:
                     r['B'] = min(BUDGET_CAP, float(r['B']) + 3)
                     st.session_state.pending_req = nl_agent.sanitize(r)
                     st.session_state.pending_dirty = True
+                    st.session_state.pending_src = f"一键重试 · 预算 {float(fail_req['B']):g}→{r['B']:g} 元"
                     st.session_state.parsed_note = ''
                     st.rerun()
                 if can_taboo and retry_cols[1].button('🥬 去掉忌口重试', key='retry_taboo',
@@ -363,6 +460,7 @@ with tab_meal:
                     r['taboo'] = set()
                     st.session_state.pending_req = nl_agent.sanitize(r)
                     st.session_state.pending_dirty = True
+                    st.session_state.pending_src = '一键重试 · 去掉忌口'
                     st.session_state.parsed_note = ''
                     st.rerun()
                 tips = []
@@ -396,6 +494,8 @@ with tab_meal:
                     st.session_state.res = rres
                     st.session_state.reasons = [nl_agent.rule_explain(preq, p) for p in rres['top3']]
                     st.session_state.meta = dict(hit=False, elapsed=rres['elapsed'], key='reshuffle')
+                    st.session_state.pick_mode = 'reshuffle'     # 小票④：同条件随机换的一批
+                    st.session_state.challenge = None
                     clear_cheats()                       # 新一批方案上线：放纵餐勾选作废
                     st.rerun()
                 else:

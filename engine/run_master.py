@@ -22,6 +22,10 @@ REQS = [
 ]
 
 EPS = 1e-6
+# core.extract 把放宽量四舍五入到 3 位才写进方案（放宽披露用），真实放宽量可能比披露值多出
+# 半个舍入单位：放宽后的边界按「披露值 + RELAX_ROUND」取，否则极端放宽方案（如预算 5 元的
+# 「建议」档）会被这 ≤0.3kcal 的舍入差误报「能量出带」。未放宽的项不加，严格度不变。
+RELAX_ROUND = 0.0005
 
 
 def dish_index(bundle):
@@ -35,7 +39,7 @@ def check_plan(idx, req, scen, p):
     """对单个方案跑硬断言，返回违规列表（空=全绿）。"""
     v = []
     relax = p.get('relax', {})
-    r = lambda k: relax.get(k, 0.0)
+    r = lambda k: relax.get(k, 0.0) + (RELAX_ROUND if k in relax else 0.0)
     items = p['items']
 
     # C4 预算硬上界（任何情况下不得放宽）
