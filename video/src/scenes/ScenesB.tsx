@@ -112,13 +112,13 @@ export const S3Serve: React.FC = () => {
 export const S4Care: React.FC = () => {
   const f = useCurrentFrame();
   if (f < S4_CUT) {
-    const gone = ['红烧肉', '金牌猪脚饭', '广式腊肠煲仔饭'];
+    const gone = ['香菜拌牛肉', '香菜丸子汤', '香菜拌豆腐'];
     const keep = ['清蒸鲈鱼', '冬菇蒸鸡', '白灼时蔬'];
     return (
       <AbsoluteFill style={{ background: 'linear-gradient(160deg,#33200F,#1D0E05)' }}>
         <Grain />
         <div style={{ position: 'absolute', top: 84, width: '100%' }}>
-          <SceneTitle main="你说不吃猪" sub="它就一道猪肉都不端上来" frame={f} />
+          <SceneTitle main="你说不吃香菜" sub="它就一片香菜都不撒" frame={f} />
         </div>
         {/* 列表上移+紧凑化：6 项总高收进 890px 内，避开底部字幕（y=940），不再重叠/截断 */}
         <div style={{ position: 'absolute', left: 300, top: 318, width: 1320 }}>

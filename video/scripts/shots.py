@@ -21,7 +21,7 @@ with sync_playwright() as pw:
     page.screenshot(path=os.path.join(OUT, 'home.png'))
     print('home ✓', flush=True)
 
-    page.get_by_placeholder('没想法？不输入也行——点「一键配饭」随机抽组条件配三套').fill('减脂，18块，不吃猪')
+    page.get_by_placeholder('没想法？不输入也行——点「一键配饭」随机抽组条件配三套').fill('减脂，18块，不吃香菜')
     page.screenshot(path=os.path.join(OUT, 'nl_input.png'))
     page.get_by_role('button', name='🍽️ 一键配饭').click()
     page.wait_for_selector('.meal-card', timeout=90000)

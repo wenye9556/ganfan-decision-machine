@@ -43,11 +43,19 @@ export const S6Value: React.FC = () => {
       { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
   return (
     <AbsoluteFill style={{ background: 'linear-gradient(155deg,#311C0D,#1A0D04)' }}>
-      {/* 背景纹理层：实拍 Ken Burns 轮换（下一张垫底、当前张淡出交叉溶解，压暗保证卡片可读） */}
-      <PhotoBg src={S6_PHOTOS[Math.min(pi + 1, S6_PHOTOS.length - 1)]} frame={pLocal} dim={0.8} blur={5} zoom={0.14} />
-      <AbsoluteFill style={{ opacity: 1 - fade }}>
-        <PhotoBg src={S6_PHOTOS[pi]} frame={pLocal} dim={0.8} blur={5} zoom={0.14} />
-      </AbsoluteFill>
+      {/* AI B-roll 插槽 S6_BG（约 84.5–103s 全段底层循环 B-roll）：manifest 声明即换视频底
+       *  （压暗罩加厚至 0.8，保证三张前景卡可读），空 manifest 时保持现有实拍 Ken Burns 轮换 */}
+      {genHas('S6_BG') ? (
+        <GenBroll slot="S6_BG" overlay={0.8} />
+      ) : (
+        <>
+          {/* 背景纹理层：实拍 Ken Burns 轮换（下一张垫底、当前张淡出交叉溶解，压暗保证卡片可读） */}
+          <PhotoBg src={S6_PHOTOS[Math.min(pi + 1, S6_PHOTOS.length - 1)]} frame={pLocal} dim={0.8} blur={5} zoom={0.14} />
+        <AbsoluteFill style={{ opacity: 1 - fade }}>
+          <PhotoBg src={S6_PHOTOS[pi]} frame={pLocal} dim={0.8} blur={5} zoom={0.14} />
+        </AbsoluteFill>
+        </>
+      )}
       <Grain />
       {/* 暖色光斑：三个大光斑缓慢漂移 */}
       {[

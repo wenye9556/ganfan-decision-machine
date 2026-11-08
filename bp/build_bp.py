@@ -14,6 +14,18 @@ stats = json.load(open(os.path.join(ROOT, 'video/public/data/stats.json'), encod
 plans = json.load(open(os.path.join(ROOT, 'video/public/data/plans.json'), encoding='utf-8'))
 cache = json.load(open(os.path.join(ROOT, 'cache/plans.json'), encoding='utf-8'))
 
+# —— 演示例句口径对齐（taboo=香菜，2026-11-08 引擎实测已验证）——
+# video/public/data/plans.json 由视频工程导出、独立维护；BP 演示方案数字在此显式覆盖，
+# 与演示句「减脂，18块，不吃香菜」保持一致：11.76 元 / 620.8 kcal / 蛋白 38.4g / 油 2.75g。
+plans['减脂']['top3'][0] = {
+    'PI': 11.76, 'E': 620.8, 'Q': 38.4, 'O': 2.75,
+    'items': [{'name': n} for n in ('三鲜肉水饺', '清蒸南瓜', '米饭(套餐)', '酸菜鱼')],
+    'cant': ['D区食堂'],
+}
+plans['减脂']['reasons'][0] = ('11.76元·D区食堂水饺鲜生/粤式风味：三鲜肉水饺+清蒸南瓜+酸菜鱼，'
+                               '620.8千卡、蛋白38.4g、油2.75g，称重按克配好不超预算，'
+                               '清淡少油贴合减脂（1荤1素档含米饭）')
+
 
 def img64(path):
     with open(path, 'rb') as f:
@@ -113,7 +125,7 @@ page(f"""
 <div class="slogan">吃透整座食堂，<br>才敢替你<em>配三套饭</em></div>
 <div class="hook">饿着的人，不该做 719 道选择题。</div>
 <p style="margin-top:26px;font-size:16px">🍚 <b>干饭决策机</b> · 商业计划书</p>
-<p class="hook" style="font-size:12.5px">一句话（"减脂，18块，不吃猪"）→ 在 {stats['dishes']} 道真实菜品中配出三套整餐方案</p>
+<p class="hook" style="font-size:12.5px">一句话（"减脂，18块，不吃香菜"）→ 在 {stats['dishes']} 道真实菜品中配出三套整餐方案</p>
 <div class="badges" style="margin-top:16px"><span>{stats['dishes']} 道真实菜</span><span>{stats['windows']} 个窗口</span>
 <span>6 个食堂区</span><span>{stats['std']} 个标准菜名</span></div>
 <p class="hook" style="margin-top:34px;font-size:12px">干饭决策机团队 ｜ 2026-11</p>
@@ -123,7 +135,7 @@ page(f"""
 page(f"""
 <h2>01 · 真实痛点：饿着的人，在做 719 道选择题</h2>
 <p class="lead">中午 12:10，下课铃响。你站在食堂门口，面前是 6 个食堂区、26 个窗口、719 道菜。
-你只有 18 块预算、想减脂、不吃猪肉——但没有一块屏幕能告诉你，哪三个窗口的组合刚好合适。</p>
+你只有 18 块预算、想减脂、不吃香菜——但没有一块屏幕能告诉你，哪三个窗口的组合刚好合适。</p>
 <div class="grid3" style="margin:14px 0">
 <div class="kpi"><div class="n">719</div><div class="l">可选菜品（决策负担）</div></div>
 <div class="kpi"><div class="n">10<span style="font-size:14px">min</span></div><div class="l">每天纠结+排队试错</div></div>
@@ -153,7 +165,7 @@ page(f"""
 # 03 解决方案 + 核心链路
 page(f"""
 <h2>02 · 解决方案：说一句话，给你三套整餐</h2>
-<p class="lead">「减脂，18块，不吃猪」——AI Agent 听懂这句话，在 {stats['dishes']} 道真实菜品里，
+<p class="lead">「减脂，18块，不吃香菜」——AI Agent 听懂这句话，在 {stats['dishes']} 道真实菜品里，
 同时掂量预算、忌口、辣度、场景营养带、油克、排队与多样性，端出 <b>Top3 整餐方案卡</b>。</p>
 <div class="flow">
 <div class="step"><b>用户输入</b><span>一句话 / 手动条件<br>场景·预算·忌口·时段</span></div><div class="arr">→</div>
@@ -167,7 +179,7 @@ page(f"""
 <div>
 <table class="nutri"><tr><th>价格</th><th>热量</th><th>蛋白</th><th>油</th></tr>
 <tr><td>{p1['PI']} 元</td><td>{p1['E']} kcal</td><td>{p1['Q']} g</td><td>{p1['O']} g</td></tr></table>
-<p>{'、'.join(it['name'] for it in p1['items'])}（{p1['cant'][0]}）</p>
+<p>{'、'.join(it['name'] for it in p1['items'])}（{p1['cant'][0]}）　<span class="tag">营养能打</span></p>
 <p class="small">{plans['减脂']['reasons'][0]}</p>
 <div class="warn" style="margin-top:8px">数字用「营养成分表」式小标签呈现：价格、热量、蛋白、油克，一眼可核对。</div>
 </div></div>
@@ -208,7 +220,7 @@ page(f"""
 无 Key 时自动切换规则解析（预算正则 + 忌口否定从句 + 场景词表）兜底，功能不断线。</p>
 <table class="tight">
 <tr><th style="width:15%">Agent 工具</th><th>职责</th><th style="width:36%">一句人话</th></tr>
-<tr><td><b>NL 理解器</b></td><td>LLM / 规则双通道解析 <code>scenario/B/period/asof/anchor/spice_max/taboo/lazy</code>，<b>闭集校验</b>不通过不执行</td><td>听得懂「减脂，18块，不吃猪」，字段不合格宁可追问、绝不瞎猜</td></tr>
+<tr><td><b>NL 理解器</b></td><td>LLM / 规则双通道解析 <code>scenario/B/period/asof/anchor/spice_max/taboo/lazy</code>，<b>闭集校验</b>不通过不执行</td><td>听得懂「减脂，18块，不吃香菜」，字段不合格宁可追问、绝不瞎猜</td></tr>
 <tr><td><b>整餐搭配引擎</b></td><td>调用求解器在 719 道实采菜中解出三套整餐，预算 / 忌口作为不可违背的硬约束</td><td>营养师管营养、会计管预算、队长管排队，一起替你掂量</td></tr>
 <tr><td><b>解释生成器</b></td><td>LLM 为每套方案生成一句解释，数字全部取自引擎输出，不现场编造</td><td>说清楚「为什么是这三套」</td></tr>
 <tr><td><b>打卡 / 周报记忆</b></td><td>打卡回流热量 / 花费 / 放纵配额生成周报；口味画像回灌打分（中期）</td><td>越用越懂你的口味</td></tr>
@@ -320,7 +332,7 @@ page(f"""
 <h3>建议试玩路径（约 60 秒）</h3>
 <table>
 <tr><th>步骤</th><th>操作</th><th>看点</th></tr>
-<tr><td>1</td><td>输入「减脂，18块，不吃猪」→ 一键配饭</td><td>NL 解析 chips + 三套方案秒出（缓存命中）</td></tr>
+<tr><td>1</td><td>输入「减脂，18块，不吃香菜」→ 一键配饭</td><td>NL 解析 chips + 三套方案秒出（缓存命中）</td></tr>
 <tr><td>2</td><td>点「再换一批」</td><td>同条件随机重挑三套，每次都不一样</td></tr>
 <tr><td>3</td><td>清空输入再点「一键配饭」</td><td>随机抽一组条件配三套（结果区明示抽到的条件）</td></tr>
 <tr><td>4</td><td>点「打卡这餐」×3，勾一次「算放纵餐」</td><td>周报长出热力图，放纵配额 2/3</td></tr>

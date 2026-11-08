@@ -23,7 +23,7 @@ json.dump(stats, open(os.path.join(OUT, 'stats.json'), 'w', encoding='utf-8'), e
 
 plans = {}
 for label, req in [
-    ('减脂', dict(scenario='减脂', B=18, period='午', asof='12:30', anchor='图书馆', spice_max=2, taboo={'猪'}, lazy=False)),
+    ('减脂', dict(scenario='减脂', B=18, period='午', asof='12:30', anchor='图书馆', spice_max=2, taboo={'香菜'}, lazy=False)),
     ('均衡', dict(scenario='均衡', B=20, period='午', asof='12:30', anchor='图书馆', spice_max=2, taboo=set(), lazy=False)),
     ('省钱', dict(scenario='省钱', B=15, period='午', asof='12:00', anchor='教学楼', spice_max=2, taboo=set(), lazy=False)),
 ]:

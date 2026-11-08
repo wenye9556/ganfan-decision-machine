@@ -51,9 +51,9 @@ export const S1Pain: React.FC = () => {
 export const S2Turn: React.FC = () => {
   const f = useCurrentFrame();
   const t = f / 30;
-  const sentence = '减脂，18块，不吃猪';
+  const sentence = '减脂，18块，不吃香菜';
   const typed = sentence.slice(0, Math.min(sentence.length, Math.floor(t * 5)));
-  const chips = ['🥗 减脂', '💰 18 元', '🚫 不吃猪'];
+  const chips = ['🥗 减脂', '💰 18 元', '🚫 不吃香菜'];
   return (
     <AbsoluteFill style={{ background: 'linear-gradient(160deg,#3A1E0E,#1F0F06)' }}>
       <Grain />
