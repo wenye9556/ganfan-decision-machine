@@ -180,6 +180,16 @@ def run_checks():
                for i in range(3)), '新求解应清空 cheat_0/1/2 勾选'
     print('新求解清空放纵勾选 ✓')
 
+    # ---- 打卡回流 avoid：同条件再配应避开刚吃过的那套（Top3 至少部分换菜） ----
+    # 每次求解都带近 7 天打卡史 avoid → do_solve 跳过缓存命中实时重解；
+    # 刚打卡那套与自身 3/3 重叠（C15 每餐至少换 2 道），不可能原样回来。
+    assert top3_sigs(at) != first_sigs, '打卡后同条件再配应换菜（近 7 天打卡史接入 avoid）'
+    eaten = set(logs[-1]['items'])
+    reshot = at.session_state.res['top3']
+    assert all(set(p['names']) != eaten for p in reshot), '刚打卡的整套菜不应原样回到 Top3'
+    changed = sum(1 for a, b in zip(first_sigs, top3_sigs(at)) if a != b)
+    print(f'打卡回流avoid ✓ 同条件再配 Top3 有 {changed}/3 套换新（刚吃过的整套已避开）')
+
     # ---- 快选条：拖辣度滑杆到「能吃辣」→ manual_dirty + 点求解 spice_max=2 生效 ----
     at.select_slider(key='spice').set_value(0)       # 先离开目标档，确保再拖到 2 会触发 on_change
     at.run()                                         # 注意：run 后元素树重建，须重新取元素再操作

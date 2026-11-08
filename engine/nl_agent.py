@@ -24,6 +24,15 @@ TABOO_WORDS = {
 # 其余重叠不遮蔽：『不吃猪杂』同时计入 猪+内脏（猪杂既是猪肉也是内脏）。
 TABOO_SHIELD = {'牛奶', '牛乳', '奶牛'}
 NEG = ['不吃', '不要', '不能吃', '不爱吃', '忌口', '忌', '免', '过敏', '去掉']
+# 饮食模式短语 → 忌口闭集映射（整句命中即计入，无须否定词；与词表扫描结果取并集）：
+# 吃素/不吃肉 → 忌红肉{猪,牛,羊}；清真/穆斯林 → 猪牛羊+内脏（闭集能力内的近似）；
+# 乳糖不耐 → 忌奶。葱姜蒜等不在闭集内，识别不了就不硬猜——留给「管不了就明说」。
+# 注意否定语义：『不吃素』是能吃肉，不触发素食映射。
+DIET_TABOO = [
+    ('清真', ('清真', '穆斯林'), {'猪', '牛', '羊', '内脏'}),
+    ('素食', ('吃素', '不吃肉'), {'猪', '牛', '羊'}),
+    ('乳糖不耐', ('乳糖不耐', '乳糖不耐受'), {'奶'}),
+]
 SCEN_WORDS = [
     ('减脂', ['减脂', '减肥', '低脂', '瘦身', '掉秤', '少油', '刮油']),
     ('增肌', ['增肌', '健身', '长肌肉', '高蛋白', '练后', '塑形']),
@@ -99,7 +108,10 @@ def _parse_budget(text):
         return float(base + frac)
     m = re.search(r'(?:预算|不超过|顶多|最多|上限)\D{0,4}(\d+(?:\.\d+)?)', t)
     if m: return float(m.group(1))
-    m = re.search(r'(?:预算|不超过|顶多|最多|上限)\D{0,4}([零一二两三四五六七八九十百]+)', t)
+    # 前缀填充词只允许「非数字且非中文数字」（如 大概/左右/花）：\D 会吞掉中文数字首字，
+    # 『预算二十』曾解析成 10（\D 吃掉"二"、捕获组只剩"十"）。排除字类后 二十/十八/十五 完整捕获。
+    m = re.search(r'(?:预算|不超过|顶多|最多|上限)[^\d零一二两三四五六七八九十百]{0,4}'
+                  r'([零一二两三四五六七八九十百]+)', t)
     if m:
         v = _cn2int(m.group(1))
         if v is not None:
@@ -216,6 +228,17 @@ def _parse_taboo(text):
     return out
 
 
+def _diet_taboo(text):
+    """饮食模式短语 → 忌口集（DIET_TABOO 整句扫描；『不吃素』否定式不触发素食）。"""
+    out = set()
+    for _name, phrases, taboos in DIET_TABOO:
+        for ph in phrases:
+            if ph in text and not (ph == '吃素' and '不吃素' in text):
+                out |= taboos
+                break
+    return out
+
+
 def rule_parse(text):
     """规则兜底解析：预算(语境+中文数字) + 忌口词表(带否定语义) + 场景/时段/位置/钟点。"""
     t = text.strip()
@@ -244,13 +267,13 @@ def rule_parse(text):
         if a in t:
             req['anchor'] = '宿舍区' if a == '宿舍' else a
             break
-    if any(w in t for w in ['不辣', '免辣', '不要辣', '不能吃辣']):
+    if any(w in t for w in ['不辣', '免辣', '不要辣', '不能吃辣', '不吃辣', '怕辣', '吃不了辣']):
         req['spice_max'] = 0
     elif any(w in t for w in ['微辣', '少辣', '不要太辣', '别太辣', '一点点辣']):
         req['spice_max'] = 1
     if any(w in t for w in ['懒得走', '不想走', '赶时间', '快点', '懒人', '就近', '不想排队']):
         req['lazy'] = True
-    req['taboo'] = _parse_taboo(t)
+    req['taboo'] = _parse_taboo(t) | _diet_taboo(t)
     return req
 
 

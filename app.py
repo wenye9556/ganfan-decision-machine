@@ -8,7 +8,7 @@ import os
 import random
 import re
 import sys
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 import streamlit as st
 
@@ -66,9 +66,26 @@ def clear_cheats():
         st.session_state.pop(f'cheat_{i}', None)
 
 
-def do_solve(req, avoid=()):
+def recent_avoid(days=7):
+    """近 7 天打卡吃过的菜（按餐分组）→ avoid/exclude 名单：换着吃，不吃连茬。
+    每条打卡一餐 → 一个菜名集合，接入引擎既有 avoid/exclude 机制（C15 至少换 2 道 /
+    随机配重叠拒收）；无打卡返回空表，行为与从前完全一致。演示占位菜名不计入。"""
+    since = (date.today() - timedelta(days=days - 1)).isoformat()
+    meals = []
+    for log in H.load_checkins():
+        if str(log.get('date', '')) >= since:
+            names = {n for n in log.get('items', []) if n and n != '示例搭配（演示）'}
+            if names:
+                meals.append(names)
+    return meals
+
+
+def do_solve(req, avoid=None):
+    """avoid=None → 自动带上近 7 天打卡史（换着吃）；显式传 () 可退回无回避求解。"""
     req = nl_agent.sanitize(req)
-    with st.spinner('正在 719 道菜里替你掂量…' if not pc.get(req) else '正在上菜…'):
+    if avoid is None:
+        avoid = recent_avoid()
+    with st.spinner('正在 719 道菜里替你掂量…' if not (pc.get(req) and not avoid) else '正在上菜…'):
         res, reasons, meta = C.solve(bundle, req, cache=pc, avoid=avoid)
     clear_cheats()
     st.session_state.req = req
@@ -89,7 +106,7 @@ def do_solve_random(req):
         clear_cheats()
         return
     with st.spinner('正在随机抽条件、配三套…'):
-        rres = core.random_recommend(bundle, req, n=3)
+        rres = core.random_recommend(bundle, req, n=3, exclude=recent_avoid())
     if not rres.get('top3'):
         do_solve(req)                       # 采样不出 → 走完整求解（含放宽阶梯）
         return
@@ -374,7 +391,7 @@ with tab_meal:
                 with st.spinner('正在重新挑三套…'):
                     preq = st.session_state.req or manual_req()
                     rres = core.random_recommend(bundle, preq, n=3,
-                                                 exclude=[set(p['names']) for p in tops])
+                                                 exclude=[set(p['names']) for p in tops] + recent_avoid())
                 if rres.get('top3'):
                     st.session_state.res = rres
                     st.session_state.reasons = [nl_agent.rule_explain(preq, p) for p in rres['top3']]
