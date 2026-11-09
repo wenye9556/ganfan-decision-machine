@@ -22,6 +22,7 @@
 
 ① 可登录试用作品
    体验链接：https://ganfan-decision-machine-antjlgqtxbdzcietke4him.streamlit.app
+   （首次打开约需 30 秒唤醒；若网络受限打不开，可按下方运行说明本地运行）
    运行说明：见附件 README.md（pip install -r requirements.txt → streamlit run app.py）
    测试账号：无需账号，打开即用（云端演示环境为临时存储）
    建议试玩：输入"减脂，18块，不吃香菜"→ 三套方案 → 打卡 → 周报热力图；
