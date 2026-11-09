@@ -309,7 +309,8 @@ st.markdown(f"""<div class="hero">
  <div class="data-badges"><span>{len(bundle['dishes'])} 道真实菜</span><span>{len(bundle['windows'])} 个窗口</span>
  <span>6 个食堂区</span><span>一句话配餐</span></div></div>""", unsafe_allow_html=True)
 
-tab_meal, tab_week, tab_comment, tab_about = st.tabs(['🍚 配饭', '📅 周报', '💬 评价', '📖 关于'])
+tab_meal, tab_week, tab_canteen, tab_comment, tab_about = st.tabs(
+    ['🍚 配饭', '📅 周报', '🏫 食堂视角', '💬 评价', '📖 关于'])
 
 # ---------------- 配饭 ----------------
 with tab_meal:
@@ -619,6 +620,14 @@ with tab_week:
             for entry in H.demo_week():
                 H.save_checkin(entry)
             st.rerun()
+
+# ---------------- 食堂视角（B 端看板原型：读 engine/gap_scan.py 离线结果，不实时扫） ----------------
+with tab_canteen:
+    gap_rep = H.load_gap_report()
+    if gap_rep is None:
+        st.info('菜单缺口雷达还没生成：先在本地跑 python engine/gap_scan.py，再回到这一页。')
+    else:
+        st.markdown(H.gap_page_html(gap_rep), unsafe_allow_html=True)
 
 # ---------------- 评价 ----------------
 with tab_comment:

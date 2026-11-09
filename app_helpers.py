@@ -10,6 +10,7 @@ from datetime import date, timedelta
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 CHECKIN_PATH = os.path.join(DATA_DIR, 'checkins.json')
 SEED_PATH = os.path.join(DATA_DIR, 'seed_checkins.json')    # 云端首开种子（入库；checkins.json 被 gitignore）
+GAP_PATH = os.path.join(DATA_DIR, 'gap_report.json')         # 食堂视角缺口雷达：engine/gap_scan.py 离线生成
 
 CSS = """
 <style>
@@ -962,11 +963,48 @@ div[data-testid="stElementContainer"]:has(.meal-card) + div[data-testid="stLayou
 }
 .twin-ok{ color:#3F7C33; background:#E9F5E4; }
 .twin-bad{ color:#B44436; background:#FBE3DF; }
+
+/* ================= 🏫 食堂视角：菜单缺口雷达（B 端看板原型） ================= */
+[data-testid="stMarkdownContainer"]:has(> .gap-page){ margin-bottom:0 !important; }
+.gap-lead{
+  font-size:15.5px; font-weight:900; color:#4A3627; letter-spacing:.3px; line-height:1.5;
+}
+.gap-sub{ font-size:11px; color:#A08770; line-height:1.7; margin:5px 0 2px; }
+.gap-cap{ font-size:10.5px; color:#B7A08B; margin:-4px 0 8px; }
+.gcard{
+  background:#fff; border:1px solid #F2E2CE; border-radius:14px;
+  padding:10px 12px 9px; margin:0 0 7px;
+  box-shadow:0 6px 14px -14px rgba(150,90,40,.8);
+}
+.gc-top{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+.gc-cond{ font-size:12.8px; font-weight:900; color:#4A3627; min-width:0; overflow-wrap:anywhere; }
+.gc-res{
+  flex:0 0 auto; font-size:11px; font-weight:900; color:#8A6A50;
+  background:#FBF3E7; border:1px solid #F3E5D2; border-radius:8px; padding:1px 8px;
+  white-space:nowrap; font-variant-numeric:tabular-nums;
+}
+.gc-res.bad{ color:#B44436; background:#FBE3DF; border-color:#F5D5CE; }
+.gc-res.good{ color:#3F7C33; background:#E9F5E4; border-color:#DDEED6; }
+.gc-line{ font-size:12.5px; color:#8A6B4E; line-height:1.75; overflow-wrap:anywhere; }
+.gc-line b{ font-size:12.8px; font-weight:900; color:#4A3627; }
+.gc-line .gc-res{ display:inline-block; line-height:1.45; }
+.gc-tag{
+  display:inline-block; margin-right:5px; font-size:9.5px; font-weight:800; color:#A8741A;
+  background:#FDF0DA; border-radius:6px; padding:0 5px; line-height:1.6;
+}
+.gc-why{ font-size:12px; color:#8A6B4E; margin-top:4px; line-height:1.6; }
+.gc-detail{ font-size:10.8px; color:#B39A80; line-height:1.65; margin-top:3px; overflow-wrap:anywhere; }
+.gap-note{ font-size:10.5px; color:#B39A80; line-height:1.7; margin-top:10px; overflow-wrap:anywhere; }
+.gap-foot{
+  margin-top:10px; padding:9px 4px 0; border-top:1px dashed #EBD9C2;
+  text-align:center; font-size:10px; color:#C2AA90; letter-spacing:.4px; line-height:1.7;
+}
 @media (max-width:480px){
   .rc-line{ font-size:11.5px; }
   .rc-line em{ flex-basis:38px; }
   .twin-g{ gap:6px; }
   .twin-row{ font-size:10.5px; }
+  .gc-cond{ font-size:12.2px; }
 }
 </style>
 """
@@ -1403,6 +1441,57 @@ def about_html(n_dishes, n_windows, n_std):
                     f'<div class="ab-t">{t}</div><div class="ab-p">{p}</div></div></div>'
                     for ico, t, p in about_cards(n_dishes, n_windows, n_std))
     return f'<div class="about-list">{cards}</div>'
+
+
+# ---------------- 🏫 食堂视角：菜单缺口雷达（读 engine/gap_scan.py 的离线结果，不实时扫） ----------------
+GAP_FOOT = '条件模拟，不代表真实需求量；上线后换成真实查询日志。营养与等待参数为估算级。'
+
+
+def load_gap_report(path=GAP_PATH):
+    """读离线扫描结果；缺文件 / 格式不对返回 None（页面给生成提示，不崩）。"""
+    data = _read_json(path)
+    return data if isinstance(data, dict) and data.get('gaps_top') is not None else None
+
+
+def gap_page_html(rep):
+    """食堂视角页：定位句 + 缺口 Top / 冷门菜 Top / 主力窗口 Top 三块卡片 + 固定页脚披露。
+    产品语言、零算法词；文本全部转义（数字来自离线扫描结果）。"""
+    e = html.escape
+    s = rep['summary']
+    n = int(s['n_combos'])
+
+    def card(title, res, res_cls, why, detail=''):
+        return (f'<div class="gcard"><div class="gc-top"><span class="gc-cond">{e(title)}</span>'
+                f'<span class="gc-res{res_cls}">{e(res)}</span></div>'
+                f'<div class="gc-why">{e(why)}</div>'
+                + (f'<div class="gc-detail">{e(detail)}</div>' if detail else '') + '</div>')
+
+    gaps = ''.join(
+        f'<div class="gcard"><div class="gc-line"><b>{e(g["cond"])}</b> → '
+        f'<span class="gc-res{" bad" if g["kind"] in ("none", "short") else ""}">{e(g["result"])}</span>'
+        f'（{e(g["why"])}）</div><div class="gc-detail"><span class="gc-tag">卡在{e(g["reason"])}</span>'
+        + e('；'.join(x for x in (g.get('detail'), f"同类 {g['count']} 种条件" if g['count'] > 1 else '') if x))
+        + '</div></div>'
+        for g in rep['gaps_top'])
+    cold = ''.join(card(d['name'], f"{d['hits']}/{n}", '', f"{d['window']} · {d['canteen']}",
+                        (f'{n} 种条件里一次都选不上：' if d['hits'] == 0 else '') + d['why'])
+                   for d in rep['cold_top'])
+    main = ''.join(card(w['window'], f"可配 {w['combos']}/{n}", ' good',
+                        f"{w['canteen']} · 平均 {w['avg_dishes']:g} 道可选",
+                        '能配的饭点：' + '、'.join(w['periods']))
+                   for w in rep['main_top'])
+    sup = s.get('supply') or {}
+    clock = ' / '.join(f"{k} {v['asof']}" for k, v in sup.items())
+    return ('<div class="gap-page">'
+            '<div class="gap-lead">学生想吃、食堂配不出的组合——这就是缺口</div>'
+            f'<div class="gap-sub">模拟了 {n} 种点餐条件（4 种场景 × 6 档预算 × 4 个时段 × 5 种忌口），'
+            f'已查出 {int(s["n_gap"])} 种配不出 3 套达标的饭。</div>'
+            '<div class="section-title">缺口 Top</div><div class="gap-cap">学生这么点，食堂接不住</div>' + gaps
+            + '<div class="section-title">冷门菜 Top</div><div class="gap-cap">在多少种条件下能被选上（越少越冷）</div>' + cold
+            + '<div class="section-title">主力窗口 Top</div><div class="gap-cap">在多少种条件下都有菜可配</div>' + main
+            + f'<div class="gap-note">和「配饭」页同一套筛选与配餐逻辑；{int(s["n_checked"])} 种条件逐条试配过，'
+            f'其余只数可选菜。钟点：{e(clock)}。</div>'
+            f'<div class="gap-foot">{GAP_FOOT}</div></div>')
 
 
 # ---------------- 打卡与周报 ----------------

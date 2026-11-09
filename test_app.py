@@ -2,7 +2,8 @@
 """test_app.py —— UI 全流程冒烟 + 三态入口 / 滑动快选条 / 无解重试 / 关于披露回归
 覆盖：首屏 → NL输入出Top3 → 决策小票（四行/对账/自检/零算法词）→ 同句二连击确定性重解 → 打卡周报
       → 随机明示轮换 → 再换一批换新 → 快选条辣度生效 / NL 回填点亮快选条 → 无解页一键重试
-      → 拆台模式 6 张刁难卡（no_cache 现场实算 / 诚实页 / 二连击签名一致 / 缓存零写入）→ 关于页披露。
+      → 拆台模式 6 张刁难卡（no_cache 现场实算 / 诚实页 / 二连击签名一致 / 缓存零写入）→ 关于页披露
+      → 🏫 食堂视角页（缺口雷达三块卡片 + 页脚披露 + 零算法词）。
 跑前自动备份 data/checkins.json 与 cache/plans.json 到系统临时目录，跑完恢复
 （cache 恢复为 pregen 的 51 条确定性条目，测试写入的 rand:/solve 条目全部清掉）。
 用法: python test_app.py
@@ -395,6 +396,29 @@ def run_checks():
         '关于页应有「这个数字怎么来的」小卡（同一套算式 / 待实测 / 非医疗建议）'
     assert '给评委的刁难卡' in md and '决策小票' in md, '关于页应介绍刁难卡与决策小票'
     print('关于页披露 ✓（宽容带 / 三维口径 / 解释链路 / 满分100 / 数字怎么来的 / 刁难卡）')
+
+    # ---- 🏫 食堂视角页（B 端缺口雷达，读 engine/gap_scan.py 离线结果 data/gap_report.json）：
+    #      分段导航有这一页；定位句 + 缺口/冷门菜/主力窗口三块 + 固定页脚披露；卡片与离线结果对账；零算法词 ----
+    assert [t.label for t in at.tabs].count('🏫 食堂视角') == 1, '分段导航应有「🏫 食堂视角」'
+    rep = H.load_gap_report()
+    assert rep and rep['summary']['n_combos'] == 480, '缺口雷达离线结果应在且覆盖 480 种条件'
+    gap_page = next((m.value for m in at.markdown if 'class="gap-page"' in m.value), '')
+    assert gap_page, '食堂视角页应渲染缺口雷达'
+    gtxt = _re.sub(r'\s+', ' ', _re.sub(r'<[^>]+>', ' ', gap_page))
+    assert '学生想吃、食堂配不出的组合——这就是缺口' in gtxt, '顶部应有一句定位'
+    for sec in ('缺口 Top', '冷门菜 Top', '主力窗口 Top'):
+        assert sec in gtxt, f'食堂视角页缺「{sec}」'
+    assert H.GAP_FOOT in gtxt and '条件模拟，不代表真实需求量' in gtxt, '页脚应固定披露「条件模拟…估算级」'
+    assert rep['gaps_top'] and rep['cold_top'] and rep['main_top'], '三块卡片都应有内容'
+    for g in rep['gaps_top']:
+        assert f"{g['cond']} → {g['result']}" in gtxt and f"（{g['why']}）" in gtxt, \
+            f"缺口卡应口语化成「条件 → N 套（原因）」并与离线结果对账: {g['label']}"
+    assert all(d['name'] in gtxt for d in rep['cold_top']), '冷门菜卡应与离线结果对账'
+    assert all(f"可配 {w['combos']}/480" in gtxt for w in rep['main_top']), '主力窗口卡应带可配次数'
+    bad = [w for w in ALGO_WORDS + ('prefilter', 'recommend', '存活', '频次') if w in gtxt]
+    assert not bad, f'食堂视角页出现算法词 {bad}'
+    print(f"食堂视角页 ✓ 缺口 {len(rep['gaps_top'])} / 冷门菜 {len(rep['cold_top'])} / 主力窗口 "
+          f"{len(rep['main_top'])} 卡 · 首条「{rep['gaps_top'][0]['label']}」· 页脚披露 · 零算法词")
 
     # ---- chips 中文化（解析来源不再出现 rule/llm 英文）----
     assert 'rule 解析' not in md and 'llm 解析' not in md, '解析来源应显示中文（规则解析/大模型解析）'

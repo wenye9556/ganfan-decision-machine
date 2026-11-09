@@ -175,7 +175,7 @@ td { font-size:11.5px; padding:6px 8px; border-bottom:1px solid #F0E2D0; line-he
 <h3 style="margin:10px 0 4px">④ 工程质量</h3>
 <div class="grid3">
 <div class="kpi"><div class="n">17 类</div><div class="l">硬断言电池全绿</div></div>
-<div class="kpi"><div class="n">57</div><div class="l">预生成缓存(命中&lt;0.1s)</div></div>
+<div class="kpi"><div class="n">52</div><div class="l">预生成缓存(命中&lt;0.1s)</div></div>
 <div class="kpi"><div class="n">100%</div><div class="l">同请求确定性一致</div></div>
 </div>
 <p class="small">断言覆盖：预算/油/能量带/蛋白/单食堂/现做≤1/售罄/忌口/辣度/减脂无油炸/套餐档位基数/米饭入账/称重克重带/同名菜≤1/双配额/Top3排他/确定性。
@@ -193,6 +193,8 @@ td { font-size:11.5px; padding:6px 8px; border-bottom:1px solid #F0E2D0; line-he
 <h3>窗口级经营信息</h3>
 <p>出餐方式（即取/现做+分钟）、一般售罄时点、供应时段、招牌菜、计价规则（单品/按份/称重/套餐档位四要素），
 拥挤等待与步行矩阵按食堂×时段记录。</p>
+<p>菜单缺口雷达已内测（见 App「🏫 食堂视角」页）：同一套菜单数据，把「学生想吃、食堂配不出」的组合
+（时段 / 售罄 / 预算 / 忌口四类主因）直接指给食堂看——B 端看板的第一块原型。</p>
 <div class="warn"><b>诚信设计</b>：拥挤/步行/油克/售罄为 AI 参数，来源列保留「待实测」；
 克重标「AI估计待实测」；估算级营养只作参考。我们把不确定的标出来，而不是藏起来。</div>
 <h3 style="margin-top:14px">从一校到多校：数据资产的迁移流水线</h3>
@@ -264,7 +266,7 @@ td { font-size:11.5px; padding:6px 8px; border-bottom:1px solid #F0E2D0; line-he
 <tr><td>6</td><td>夜宵时段 / 极端预算（5 元）</td><td>「建议」降级标签 / 诚实无解页</td></tr>
 </table>
 <h3>性能</h3>
-<p>预生成 57 个代表性请求，缓存命中 &lt;0.1s；未命中实时求解 0.4–8.4s（另 6 例极端条件秒判无解，不计入区间）并自动回写缓存。
+<p>预生成 52 个代表性请求，缓存命中 &lt;0.1s；未命中实时求解 0.4–8.4s（另 6 例极端条件秒判无解，不计入区间）并自动回写缓存。
 有 OpenAI 兼容 Key 时 NL 走 LLM，无 Key 自动规则解析，演示不断线。</p>
 <div class="warn">数据口径声明：菜品/价格/窗口为实采；拥挤、步行、油克、售罄为「待实测」AI 参数；
 营养为估算级（麦当劳公示级）；评论为预置样例。</div>
