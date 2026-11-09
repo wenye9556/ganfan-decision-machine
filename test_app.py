@@ -195,6 +195,19 @@ def run_checks():
     assert 'class="ms-est"' in md_now and '估算' in md_now, '方案卡四宫格应带「估算」角标'
     print('决策小票 ✓', rc[rc.find('做了什么筛选'):rc.find('出餐自检')][:120], '…')
 
+    # ---- 三色听懂回执：✅ 你说的（user 字段）+ 📌 我先默认的（default 字段）；
+    #      无葱姜蒜类闭集外忌口 → 🙁 行整行不显示；无 Key 路径不应出现「离线兜底」 ----
+    md = ''.join(m.value for m in at.markdown)
+    assert 'class="heard"' in md, '结果区上方应有三色听懂回执'
+    assert '你说的' in md and '我先默认的' in md, '回执应有 ✅/📌 两段'
+    heard = next(m.value for m in at.markdown if 'class="heard"' in m.value)
+    assert '减脂' in heard and '18' in heard and '忌 猪' in heard, f'✅ 段应含场景/预算/忌口: {heard}'
+    assert '图书馆附近' in heard and '能吃辣' in heard, f'📌 段应含默认位置与默认辣度: {heard}'
+    assert '这个我还管不了' not in heard, '无闭集外忌口时 🙁 行应整行不显示'
+    assert '离线兜底' not in heard, '未配 Key 不应标注离线兜底'
+    assert has_button(at, '去微调'), '📌 段应带跳转高级微调的按钮'
+    print('三色听懂回执 ✓（✅ 你说的 / 📌 我先默认的；🙁 行未显示；带去微调按钮）')
+
     # ---- 同句二连击：面板未脏 → 按上次解析条件确定性重解，结果一致、rand_note 为空 ----
     click_button(at, '🍽️ 一键配饭')
     at.run()
@@ -259,6 +272,20 @@ def run_checks():
     assert not ss['manual_dirty'], 'NL 回填不算手动配置'
     assert ss['res']['top3'], 'NL 回填后应出结果'
     print('NL 回填快选条 ✓', dict(scen=ss['scen'], budget=ss['budget'], 香菜chip=ss['taboo_香菜']))
+
+    # ---- 葱姜蒜（闭集外忌口）：🙁 行如实列出「管不了」、不硬猜进忌口；配餐照常 ----
+    at.text_input[0].set_value('减脂，18块，不吃香菜和葱姜蒜')
+    at.run()
+    click_button(at, '🍽️ 一键配饭')
+    at.run()
+    assert not at.exception, f'葱姜蒜回执异常: {at.exception}'
+    heard = next(m.value for m in at.markdown if 'class="heard"' in m.value)
+    assert '这个我还管不了' in heard and '葱姜蒜' in heard and '怕漏不能装懂' in heard, \
+        f'🙁 行应如实列出葱姜蒜: {heard}'
+    assert '忌 香菜' in heard, '闭集内的香菜仍应进 ✅ 段'
+    assert at.session_state.req['taboo'] == {'香菜'}, '葱姜蒜绝不硬猜进求解忌口'
+    assert at.session_state.res['top3'], '闭集外忌口不影响正常配餐'
+    print('葱姜蒜回执 ✓ 🙁 行如实列出（怕漏不能装懂），求解忌口仍只有香菜')
 
     # ---- 无解页：0 套 → 一键改条件重试按钮 ----
     at.text_input[0].set_value(INFEASIBLE_NL)

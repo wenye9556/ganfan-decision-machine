@@ -464,6 +464,35 @@ div[data-testid="stCaptionContainer"]{ color:#A8917B; }
 }
 .chips-src{ margin-top:7px; font-size:10px; color:#B7A08B; }
 
+/* ================= 三色听懂回执（✅ 你说的 / 📌 我先默认的 / 🙁 管不了的） ================= */
+.heard{
+  background:#FFF9F0; border:1px solid #F4E4CF; border-radius:16px;
+  padding:11px 12px 9px; margin:0;
+  animation:serve .35s ease backwards;
+}
+.heard-head{
+  display:flex; align-items:center; gap:5px;
+  font-size:10.5px; font-weight:900; color:#B4612C; letter-spacing:.6px;
+  margin-bottom:6px;
+}
+.heard-head .heard-src{ font-weight:600; color:#C4A88C; letter-spacing:0; }
+.heard-row{
+  display:flex; align-items:baseline; gap:8px;
+  padding:3.5px 0; font-size:12px; line-height:1.65;
+}
+.heard-row + .heard-row{ border-top:1px dashed #F4E4CF; }
+.heard-row .hk{
+  flex:0 0 92px; font-size:10.5px; font-weight:900; letter-spacing:.3px;
+  white-space:nowrap;
+}
+.heard-row .hv{ flex:1; color:#5C4432; }
+.heard-row.ok .hk{ color:#3E8E5A; }
+.heard-row.ok .hv{ color:#4A6B44; font-weight:600; }
+.heard-row.df .hk{ color:#C07A28; }
+.heard-row.df .hv{ color:#8A6B4E; }
+.heard-row.no .hk{ color:#A85B4E; }
+.heard-row.no .hv{ color:#8A6B4E; }
+
 /* ================= solve meta ================= */
 /* 数字精简：主视觉只留「N 道菜符合你的条件」一句（加大加粗），
    缓存命中/耗时等实现细节收纳进 ⓘ 悬停小字（移动端点按也能借 title 提示露出） */
@@ -780,6 +809,9 @@ div[data-testid="stElementContainer"]:has(.meal-card) + div[data-testid="stLayou
   div[data-testid="stTextInputRootElement"] input::placeholder{ font-size:13px; }
 
   /* 快选条手机适配：字号收紧、chips 触控高度保持 ≥32px、不横溢 */
+  .heard-row{ flex-wrap:wrap; }
+  .heard-row .hk{ flex:0 0 auto; }
+  .heard-row .hv{ flex:1 1 100%; padding-left:24px; }
   .qb-head .qb-s, .qb-row .qb-s{ font-size:10px; }
   .qb-row .qb-bval{ font-size:20px; }
   .qb-ticks{ padding:0 8px; }
@@ -967,6 +999,32 @@ def dish_emoji(name, cat=None):
 
 def hint_html(text):
     return f'<div class="hint">{text}</div>'
+
+
+def heard_receipt_html(rc):
+    """三色听懂回执：✅ 你说的（origin=user）· 📌 我先默认的（origin=default）·
+    🙁 这个我还管不了（葱姜蒜等闭集外忌口，没有则整行不显示）。产品语言、零算法词；
+    文本全部 HTML 转义。rc 结构见 app.parsed_receipt_of。"""
+    e = html.escape
+
+    def row(cls, ico, key, val):
+        return (f'<div class="heard-row {cls}"><span class="hk">{ico} {key}</span>'
+                f'<span class="hv">{val}</span></div>')
+
+    rows = []
+    if rc.get('user'):
+        rows.append(row('ok', '✅', '你说的', ' · '.join(e(x) for x in rc['user'])))
+    if rc.get('dflt'):
+        rows.append(row('df', '📌', '我先默认的', ' · '.join(e(x) for x in rc['dflt'])))
+    if rc.get('unsupported'):
+        words = '、'.join(e(w) for w in rc['unsupported'])
+        rows.append(row('no', '🙁', '这个我还管不了',
+                        f'{words}——菜品档案没标到这么细，怕漏不能装懂'))
+    if not rows:
+        return ''
+    src = e(rc.get('src') or '')
+    src_html = f'<span class="heard-src">（{src}）</span>' if src else ''
+    return f'<div class="heard"><div class="heard-head">🤖 听懂啦{src_html}</div>{"".join(rows)}</div>'
 
 
 def plan_card(p, reason, idx):

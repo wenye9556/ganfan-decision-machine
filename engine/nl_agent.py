@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 """nl_agent.py —— NL Agent 链路：自然语言 → 结构化请求JSON → 引擎 → 每方案一句解释
-LLM 走 OpenAI 兼容协议（环境变量 OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_MODEL），
+LLM 走 OpenAI 兼容协议（OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_MODEL），
 无 key 或调用失败自动回落规则解析；接口抽象层随时可切换实现。
+字段来源跟踪：parse() 的 meta 附 origin={field:'user'|'default'}（用户明确提到=user，
+sanitize/兜底默认补的=default），供 UI 三色听懂回执（✅ 你说的 / 📌 我先默认的 / 🙁 管不了的）。
+LLM 优先通道带熔断：解析超时(8s)/失败一次 → breaker['broken']=True，本会话后续解析与
+解释直接走规则版（meta.fallback=True，UI 标注「离线兜底」）；未配 Key 行为与从前完全一致。
 """
 import json
 import os
@@ -51,8 +55,22 @@ SCHEMA_HINT = (
     '输出严格JSON：{"scenario":"均衡|减脂|增肌|省钱","B":数字(预算元),'
     '"period":"早|午|下午|晚|夜宵","asof":"HH:MM","anchor":"图书馆|教学楼|宿舍区",'
     '"spice_max":0|1|2(0不辣/1微辣/2辣),"taboo":["猪","牛","羊","海鲜","蛋","奶","花生","芝麻","麸质","香菜","内脏"],'
-    '"lazy":true|false(赶时间/懒得走)}。只输出JSON。'
+    '"lazy":true|false(赶时间/懒得走),'
+    '"unsupported":["葱"|"姜"|"蒜"等用户明确说不能吃、但不在taboo闭集内的食材词]}。'
+    '只填用户这句话里明确提到的字段，没提到的字段整个省略不要替用户猜（由默认值补）；'
+    'unsupported 没有就给空数组。只输出JSON。'
 )
+# 字段来源口径（三色回执用）：parse() 的 meta['origin'] 对这些字段逐一标 'user'/'default'
+ORIGIN_FIELDS = ('scenario', 'B', 'period', 'asof', 'anchor', 'spice_max', 'taboo', 'lazy')
+# 闭集外忌口类别（菜品档案没标到这么细）：命中就如实交出「管不了」，绝不硬猜进 taboo
+UNSUPPORTED_TABOO = {
+    '葱姜蒜': ['葱姜蒜', '葱花', '蒜末', '蒜蓉', '生姜', '大蒜', '香葱', '姜蓉', '葱', '姜', '蒜'],
+}
+# LLM 优先通道参数：解析超时 8s；解释三套合并为一次调用，超时 15s
+LLM_PARSE_TIMEOUT = 8
+LLM_EXPLAIN_TIMEOUT = 15
+# 模块级兜底熔断器（app 按会话传入自己的 breaker；引擎独立跑时共用这一份）
+_BREAKER = {'broken': False}
 
 # —— 中文数字预算（十五块/二十块/十八块五/一百块……覆盖 1–199 + 块五/块半） ——
 CN_DIGIT = {'零': 0, '一': 1, '二': 2, '两': 2, '三': 3, '四': 4,
@@ -124,24 +142,43 @@ def _parse_budget(text):
 
 
 # —— 口语钟点：(早上|上午|中午|下午|傍晚|晚上|夜里|半夜|凌晨)?X点(半|X分)? → asof ——
-CLOCK_RE = re.compile(r'(早上|上午|中午|下午|傍晚|晚上|夜里|半夜|凌晨)?\s*(\d{1,2})\s*点\s*(半|(\d{1,2})\s*分?|一刻)?')
+# 小时/分钟均支持 ASCII 数字与中文数字（晚上8点 / 晚上八点 / 八点二十分）
+CLOCK_NUM = r'(?:\d{1,2}|[零一二两三四五六七八九十]{1,3})'
+CLOCK_RE = re.compile(r'(早上|上午|中午|下午|傍晚|晚上|夜里|半夜|凌晨)?\s*(' + CLOCK_NUM +
+                      r')\s*点\s*(半|一刻|(' + CLOCK_NUM + r')\s*分?)?')
 CLOCK_HHMM_RE = re.compile(r'(?<![\d:.])(\d{1,2}):(\d{2})(?![\d:])')
+
+
+def _clock_num(s):
+    """钟点数字段（ASCII 或中文）→ int；解析不了返回 None。"""
+    s = s.strip()
+    if s.isdigit():
+        return int(s)
+    return _cn2int(s)
 
 
 def _clock(text):
     """口语钟点 → 'HH:MM'（无钟点返回 None）。
-    下午/傍晚/晚上/夜里 自动 +12（下午2点半→14:30）；『晚上/夜里/半夜12点』按午夜 23:59；
-    中午 12 点附近：12点保持 12:xx，『中午1点/2点』按口语习惯= 13/14 点。"""
+    下午/傍晚/晚上/夜里 自动 +12（下午2点半→14:30、晚上八点→20:00）；
+    『晚上/夜里/半夜12点』按午夜 23:59；
+    中午 12 点附近：12点保持 12:xx，『中午1点/2点』按口语习惯= 13/14 点。
+    货币语境守卫：『十八点五块/八点五元』的"点"是小数点不是钟点，紧跟块/元即判钱。"""
     m = CLOCK_RE.search(text)
+    if m and re.match(r'\s*[块元]', text[m.end():]):
+        m = None                                            # 十八点五块＝18.5元，不是 18:05
     if m:
-        pre, hh, mm = m.group(1), int(m.group(2)), 0
+        pre, hh, mm = m.group(1), _clock_num(m.group(2)), 0
+        if hh is None:
+            return None
         tail = m.group(3)
         if tail == '半':
             mm = 30
         elif tail == '一刻':
             mm = 15
         elif tail:
-            mm = int(m.group(4) or tail.rstrip('分'))
+            mm = _clock_num(m.group(4) or tail.rstrip('分'))
+            if mm is None:
+                mm = 0
         if pre in ('下午', '傍晚'):
             if hh < 12: hh += 12
         elif pre in ('晚上', '夜里', '半夜'):
@@ -239,42 +276,79 @@ def _diet_taboo(text):
     return out
 
 
+def _parse_unsupported(text):
+    """闭集外忌口（葱姜蒜等）：句中命中且所在从句带否定/忌口/避开语义 → 如实列出。
+    与 _parse_taboo 同一套否定判据（『我想吃葱油拌面』不误报）；长词命中后遮蔽内含
+    短词（『葱姜蒜』只报一次，不再拆出葱/姜/蒜）。返回命中原词列表（展示用）。"""
+    global_neg = any(k in text for k in ['忌口', '过敏'])
+    seen = set()
+    for words in UNSUPPORTED_TABOO.values():
+        for w in words:
+            for m in re.finditer(re.escape(w), text):
+                if global_neg or any(n in _clause_before(text, m.start()) for n in NEG):
+                    seen.add(w)
+    kept = []
+    for w in sorted(seen, key=len, reverse=True):        # 长词优先，短词是其子串则不重复报
+        if not any(w in k for k in kept):
+            kept.append(w)
+    return kept
+
+
 def rule_parse(text):
-    """规则兜底解析：预算(语境+中文数字) + 忌口词表(带否定语义) + 场景/时段/位置/钟点。"""
+    """规则兜底解析（保持原契约：只返回 req dict，兼容既有调用与回归电池）。"""
+    return rule_parse_full(text)[0]
+
+
+def rule_parse_full(text):
+    """规则解析 + 字段来源：返回 (req, origin, unsupported)。
+    origin={field:'user'|'default'}——用户话语里明确提到的字段（场景/预算/时段/辣度/
+    忌口/懒人/钟点/位置）标 user，引擎兜底默认（sanitize 同款默认值）标 default。"""
     t = text.strip()
     req = dict(scenario='均衡', B=20, period='午', asof='12:30', anchor='图书馆',
                spice_max=2, taboo=set(), lazy=False)
+    origin = {f: 'default' for f in ORIGIN_FIELDS}
     for scen, words in SCEN_WORDS:
         if any(w in t for w in words):
             req['scenario'] = scen
+            origin['scenario'] = 'user'
             break
     B = _parse_budget(t)
     if B is not None:
         B = max(3, min(100, B))
         req['B'] = int(B) if B == int(B) else B
+        origin['B'] = 'user'
     period_word = None
     for period, words, asof in PERIODS:
         if any(w in t for w in words):
             req['period'], req['asof'] = period, asof
             period_word = period
+            origin['period'] = 'user'                       # 时段词只标时段；asof 是段内默认锚点
             break
     clock = _clock(t)                                                  # 口语钟点 → asof
     if clock:
         req['asof'] = clock
-        if not period_word:                                            # 没说时段词 → 按 asof 归段
+        origin['asof'] = 'user'
+        if not period_word:                                            # 没说时段词 → 按钟点归段
             req['period'] = _period_from_asof(clock)
+            origin['period'] = 'user'                                  # 钟点推出的时段也算用户给的
     for a in ANCHORS:
         if a in t:
             req['anchor'] = '宿舍区' if a == '宿舍' else a
+            origin['anchor'] = 'user'
             break
     if any(w in t for w in ['不辣', '免辣', '不要辣', '不能吃辣', '不吃辣', '怕辣', '吃不了辣']):
         req['spice_max'] = 0
+        origin['spice_max'] = 'user'
     elif any(w in t for w in ['微辣', '少辣', '不要太辣', '别太辣', '一点点辣']):
         req['spice_max'] = 1
+        origin['spice_max'] = 'user'
     if any(w in t for w in ['懒得走', '不想走', '赶时间', '快点', '懒人', '就近', '不想排队']):
         req['lazy'] = True
+        origin['lazy'] = 'user'
     req['taboo'] = _parse_taboo(t) | _diet_taboo(t)
-    return req
+    if req['taboo']:
+        origin['taboo'] = 'user'
+    return req, origin, _parse_unsupported(t)
 
 
 def sanitize(req):
@@ -309,18 +383,62 @@ def sanitize(req):
     return out
 
 
-def parse(text, llm=None):
-    """NL → AtomReq。返回 (req, meta)；LLM 可用则优先，失败/无key自动规则兜底。"""
+def _origin_from_llm_raw(raw):
+    """LLM 通道的字段来源：提示词要求只填用户提到的字段 → 原始 JSON 里有值即 user，
+    省略/留空即 default（值由 sanitize 补默认）。"""
+    origin = {f: 'default' for f in ORIGIN_FIELDS}
+
+    def said(v):
+        return v is not None and v != '' and v != [] and v != {}
+
+    if said(raw.get('scenario')):
+        origin['scenario'] = 'user'
+    if said(raw.get('B')):
+        origin['B'] = 'user'
+    if said(raw.get('period')):
+        origin['period'] = 'user'
+    if said(raw.get('asof')):
+        origin['asof'] = 'user'
+    if said(raw.get('anchor')):
+        origin['anchor'] = 'user'
+    if raw.get('spice_max') is not None:
+        origin['spice_max'] = 'user'
+    tb = raw.get('taboo')
+    if (isinstance(tb, (list, tuple, set)) and len(tb) > 0) or (isinstance(tb, str) and tb.strip()):
+        origin['taboo'] = 'user'
+    if raw.get('lazy') is True:
+        origin['lazy'] = 'user'
+    return origin
+
+
+def parse(text, llm=None, breaker=None):
+    """NL → AtomReq。返回 (req, meta)；配置 Key 时解析优先走 LLM（超时 8s），
+    失败/超时 → 熔断（breaker['broken']=True），本会话后续解析直接走规则版并在
+    meta 标 fallback=True（UI 回执标注「离线兜底」）。未配 Key 与从前行为完全一致。
+    meta 附 origin={field:'user'|'default'}（字段来源，三色回执用）与
+    unsupported（葱姜蒜等闭集外忌口原词，如实交出）。"""
     llm = llm or OpenAILLM()
-    if llm.available:
+    breaker = breaker if breaker is not None else _BREAKER
+    if llm.available and not breaker.get('broken'):
         try:
-            raw = llm.complete('你是校园干饭助手的需求理解器。' + SCHEMA_HINT, text)
+            raw = llm.complete('你是校园干饭助手的需求理解器。' + SCHEMA_HINT, text,
+                               timeout=LLM_PARSE_TIMEOUT)
             m = re.search(r'\{.*\}', raw, re.S)
-            req = sanitize(json.loads(m.group(0)))
-            return req, dict(parser='llm', model=llm.model)
+            raw_json = json.loads(m.group(0))
+            req = sanitize(raw_json)
+            uns = raw_json.get('unsupported') or []
+            if isinstance(uns, str):
+                uns = re.split(r'[,，、]', uns)
+            uns = [str(x).strip() for x in uns if str(x).strip()]
+            return req, dict(parser='llm', model=llm.model,
+                             origin=_origin_from_llm_raw(raw_json), unsupported=uns[:6])
         except Exception:
-            pass  # 静默回落，演示不崩
-    return sanitize(rule_parse(text)), dict(parser='rule')
+            breaker['broken'] = True          # 本会话熔断：后续解析不再试 LLM
+    req, origin, uns = rule_parse_full(text)
+    meta = dict(parser='rule', origin=origin, unsupported=uns)
+    if llm.available and breaker.get('broken'):
+        meta['fallback'] = True              # 有 Key 但本会话已降级 → 离线兜底
+    return sanitize(req), meta
 
 
 def rule_explain(req, p):
@@ -346,23 +464,35 @@ def rule_explain(req, p):
     return head + '：' + body
 
 
-def explain(req, res, llm=None):
-    """为 Top3 每方案生成一句解释；LLM 失败逐条回落模板。"""
+def explain(req, res, llm=None, breaker=None):
+    """为 Top3 每方案生成一句解释。三套合并为一次 LLM 调用（批量提示词一次返回 3 段，
+    替代原逐套调用）；失败/超时/段数不符 → 整批回落 rule_explain 模板。熔断状态下
+    （breaker['broken']）不再试 LLM，直接模板，保证离线兜底也不拖慢演示。"""
     llm = llm or OpenAILLM()
+    breaker = breaker if breaker is not None else {}
+    plans = res.get('top3', [])
+    texts = None
+    if llm.available and not breaker.get('broken') and plans:
+        try:
+            briefs = [dict(items=[it['name'] for it in p['items']], wins=p['wins'], cant=p['cant'],
+                           price=p['PI'], kcal=p['E'], protein=p['Q'], oil=p['O'],
+                           status=p['status'], relax=p.get('relax', {}), label=p['label'])
+                      for p in plans]
+            raw = llm.complete(
+                '你是贴心的干饭搭子。输入JSON里有plans数组（共%d套方案）。对每一套写一句≤60字中文推荐'
+                '理由，口语、温暖、不堆砌数字、不提算法/模型/优化等术语；若有relax要诚实说明放宽了什么。'
+                '输出严格JSON：一个字符串数组，长度必须等于%d、顺序与plans一致，第i条对应第i套；'
+                '除该数组外不要输出任何文字。' % (len(briefs), len(briefs)),
+                json.dumps(dict(scenario=req['scenario'], budget=req['B'], plans=briefs), ensure_ascii=False),
+                timeout=LLM_EXPLAIN_TIMEOUT)
+            m = re.search(r'\[.*\]', raw, re.S)
+            arr = json.loads(m.group(0))
+            if isinstance(arr, list) and len(arr) == len(plans):
+                texts = [str(x).strip().strip('"') for x in arr]
+        except Exception:
+            texts = None                                  # 整批回落模板，不逐套重试
     out = []
-    for p in res.get('top3', []):
-        text = None
-        if llm.available:
-            try:
-                brief = dict(items=[it['name'] for it in p['items']], wins=p['wins'], cant=p['cant'],
-                             price=p['PI'], kcal=p['E'], protein=p['Q'], oil=p['O'],
-                             status=p['status'], relax=p.get('relax', {}), label=p['label'])
-                text = llm.complete(
-                    '你是贴心的干饭搭子。根据方案JSON写一句≤60字中文推荐理由，口语、温暖、不堆砌数字、'
-                    '不提算法/模型/优化等术语；若有relax要诚实说明放宽了什么。',
-                    json.dumps(dict(scenario=req['scenario'], budget=req['B'], plan=brief), ensure_ascii=False))
-                text = text.strip().strip('"')
-            except Exception:
-                text = None
-        out.append(text or rule_explain(req, p))
+    for i, p in enumerate(plans):
+        t = texts[i] if texts and i < len(texts) else ''
+        out.append(t or rule_explain(req, p))
     return out

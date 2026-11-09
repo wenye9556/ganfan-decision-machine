@@ -6,7 +6,6 @@
 import html
 import os
 import random
-import re
 import sys
 from datetime import datetime, date, timedelta
 
@@ -35,6 +34,7 @@ SPICE_OPTS = [0, 1, 2]
 SPICE_LABEL = ['不辣', '微辣', '能吃辣']
 ANCHOR_OPTS = ['图书馆', '教学楼', '宿舍区']
 PARSER_CN = {'rule': '规则解析', 'llm': '大模型解析'}
+PERIOD_CN = {'早': '早餐', '午': '午餐', '下午': '下午茶', '晚': '晚餐', '夜宵': '夜宵'}
 BUDGET_CAP = 50          # 预算重试按钮在此上限内生效；快选滑杆只能表达 10–30，出界以滑杆边界显示
 SRC_QUICK = '快选条（按你拖 / 点的条件）'
 
@@ -58,7 +58,7 @@ def get_index():
 bundle = get_bundle()
 pc = get_cache()
 
-for k, v in dict(req=None, res=None, reasons=[], meta=None, last_nl='', parsed_note='',
+for k, v in dict(req=None, res=None, reasons=[], meta=None, last_nl='', parsed_rc=None,
                 rand_note='', last_parsed_req=None, manual_dirty=False,
                 req_src='', nl_src='', pick_mode='fixed', avoid_n=0, challenge=None,
                 plan_history=[]).items():
@@ -107,8 +107,9 @@ def do_solve(req, avoid=None, src=None):
     req = nl_agent.sanitize(req)
     if avoid is None:
         avoid = recent_avoid()
+    llm, brk = llm_channel()
     with st.spinner('正在 719 道菜里替你掂量…' if not (pc.get(req) and not avoid) else '正在上菜…'):
-        res, reasons, meta = C.solve(bundle, req, cache=pc, avoid=avoid)
+        res, reasons, meta = C.solve(bundle, req, cache=pc, avoid=avoid, llm=llm, breaker=brk)
     clear_cheats()
     st.session_state.req = req
     st.session_state.res = res
@@ -154,13 +155,60 @@ def do_solve_random(req):
     pc.put(req, rres, reasons, origin='random')
 
 
-def parsed_note_of(req, pmeta):
-    """NL 解析结果 → 「听懂啦」一行说明（chips 渲染见 parsed_chips_html）。"""
-    return (f"听懂啦：{req['scenario']} · {req['B']:g}元 · {req['period']}{req['asof']} · "
-            f"{req['anchor']} · 辣度{SPICE_LABEL[req['spice_max']]}"
-            + (f" · 忌{'/'.join(sorted(req['taboo']))}" if req['taboo'] else '')
-            + (' · 懒人模式' if req['lazy'] else '')
-            + f"（{PARSER_CN.get(pmeta['parser'], pmeta['parser'])}）")
+def llm_channel():
+    """LLM 优先通道（Key 可选）：st.secrets / 环境变量双通道读 OPENAI_*，部署后在
+    Streamlit Cloud 填 Secrets 即自动升级，零代码改动；未配 Key 返回 (None, breaker)，
+    解析走规则版、解释走模板，行为与从前完全一致。熔断器挂在会话上：LLM 解析失败/超时
+    一次，本会话后续解析与解释直接走离线兜底（回执标注「离线兜底」）。"""
+    st.session_state.setdefault('llm_breaker', {'broken': False})
+    cfg = {}
+    try:
+        for k in ('OPENAI_API_KEY', 'OPENAI_BASE_URL', 'OPENAI_MODEL'):
+            if k in st.secrets:
+                cfg[k] = str(st.secrets[k])
+    except Exception:
+        pass                                            # 无 secrets.toml / 非 Streamlit 环境
+    for k in ('OPENAI_API_KEY', 'OPENAI_BASE_URL', 'OPENAI_MODEL'):
+        cfg[k] = cfg.get(k) or os.environ.get(k, '')
+    llm = None
+    if cfg['OPENAI_API_KEY']:
+        llm = nl_agent.OpenAILLM(api_key=cfg['OPENAI_API_KEY'],
+                                 base_url=cfg['OPENAI_BASE_URL'] or None,
+                                 model=cfg['OPENAI_MODEL'] or None)
+    return llm, st.session_state.llm_breaker
+
+
+def parsed_receipt_of(req, pmeta):
+    """解析结果 → 三色听懂回执数据（渲染见 H.heard_receipt_html）：
+    ✅ 你说的（origin=user 的字段）/ 📌 我先默认的（origin=default 的关键字段，
+    可点按钮跳高级微调）/ 🙁 这个我还管不了（葱姜蒜等闭集外忌口，没有则整行不显示）。"""
+    o = pmeta.get('origin') or {}
+    user, dflt = [], []
+
+    def put(field, text_user, text_dflt=None):
+        """origin=user 进 ✅ 段；default 且给了展示文案的进 📌 段（默认关闭态不展示，免歧义）。"""
+        if o.get(field) == 'user':
+            user.append(text_user)
+        elif text_dflt:
+            dflt.append(text_dflt)
+
+    put('scenario', req['scenario'], f"{req['scenario']}（没说就先按这个配）")
+    put('B', f"预算 {req['B']:g} 元")
+    if o.get('period') == o.get('asof'):                 # 时段与钟点同源 → 合并成一颗
+        put('period', f"{PERIOD_CN.get(req['period'], req['period'])} {req['asof']}",
+            f"{PERIOD_CN.get(req['period'], req['period'])} {req['asof']}")
+    else:
+        put('period', PERIOD_CN.get(req['period'], req['period']),
+            PERIOD_CN.get(req['period'], req['period']))
+        put('asof', req['asof'], req['asof'])
+    put('anchor', req['anchor'], f"{req['anchor']}附近")
+    put('spice_max', SPICE_LABEL[req['spice_max']], f"辣度先按「{SPICE_LABEL[req['spice_max']]}」")
+    put('taboo', '忌 ' + '、'.join(sorted(req['taboo'])))
+    put('lazy', '懒人模式（懒得走/赶时间）')
+    src = PARSER_CN.get(pmeta['parser'], pmeta['parser'])
+    if pmeta.get('fallback'):
+        src += ' · 离线兜底'
+    return dict(user=user, dflt=dflt, unsupported=list(pmeta.get('unsupported') or []), src=src)
 
 
 def run_challenge(key):
@@ -168,11 +216,14 @@ def run_challenge(key):
     （不读也不写缓存、不带打卡记录 avoid）；「同句连点两次」连算两遍并排比对方案签名。
     须在快选 widgets 实例化之前调用（配饭页顶部 pending_challenge 处）。"""
     c = H.CHALLENGE_BY_KEY[key]
-    req, pmeta = nl_agent.parse(c['say'])
+    llm, brk = llm_channel()
+    req, pmeta = nl_agent.parse(c['say'], llm=llm, breaker=brk)
     req = nl_agent.sanitize(req)
     parser = PARSER_CN.get(pmeta['parser'], pmeta['parser'])
+    if pmeta.get('fallback'):
+        parser += ' · 离线兜底'
     st.session_state.last_nl = c['say']
-    st.session_state.parsed_note = parsed_note_of(req, pmeta)
+    st.session_state.parsed_rc = parsed_receipt_of(req, pmeta)
     st.session_state.rand_note = ''
     st.session_state.last_parsed_req = req
     st.session_state.nl_src = f'一句话 · {parser}'
@@ -183,7 +234,8 @@ def run_challenge(key):
     for i in range(n_runs):
         msg = f'🧪 不读预存结果，现场实算中（第 {i + 1}/{n_runs} 遍）…' if n_runs > 1 else '🧪 不读预存结果，现场实算中…'
         with st.spinner(msg):
-            res, reasons, meta = C.solve(bundle, req, cache=pc, avoid=(), no_cache=True)
+            res, reasons, meta = C.solve(bundle, req, cache=pc, avoid=(), no_cache=True,
+                                         llm=llm, breaker=brk)
         runs.append(dict(elapsed=meta['elapsed'],
                          plans=[(H.sig_code(p['sig']), p['PI']) for p in res.get('top3', [])]))
     clear_cheats()
@@ -239,6 +291,7 @@ def random_req():
 def mark_manual():
     """标记用户亲手动过快选条 / 高级微调（NL 解析回填不算，见 NL 分支里重置）。"""
     st.session_state.manual_dirty = True
+    st.session_state.tune_open = False      # 用户已上手微调，收回「跳高级微调」的强制展开
 
 
 def ticks_html(labels, cur):
@@ -246,23 +299,6 @@ def ticks_html(labels, cur):
     cells = ''.join(f'<span class="on">{html.escape(l)}</span>' if i == cur
                     else f'<span>{html.escape(l)}</span>' for i, l in enumerate(labels))
     return f'<div class="qb-ticks">{cells}</div>'
-
-
-def parsed_chips_html(note):
-    """把 parsed_note 一行说明拆成 App 风格的标签条（文本原样保留，全部 HTML 转义）。"""
-    body = note
-    if body.startswith('听懂啦：'):
-        body = body[len('听懂啦：'):]
-    src = ''
-    m = re.search(r'（([^（）]*)）\s*$', body)
-    if m:
-        src = m.group(1)
-        body = body[:m.start()].rstrip()
-    parts = [x.strip() for x in body.split('·') if x.strip()]
-    chips = ''.join(f'<span class="chip">{html.escape(p)}</span>' for p in parts)
-    src_html = f'<div class="chips-src">（{html.escape(src)}）</div>' if src else ''
-    return (f'<div class="chips"><div class="chips-head">🤖 听懂啦</div>'
-            f'<div class="chips-row">{chips}</div>{src_html}</div>')
 
 
 # ---------------- 头部 ----------------
@@ -336,13 +372,17 @@ with tab_meal:
 
     if st.button('🍽️ 一键配饭', type='primary', use_container_width=True):
         if new_input:
-            req, pmeta = nl_agent.parse(nl)
+            llm, brk = llm_channel()
+            req, pmeta = nl_agent.parse(nl, llm=llm, breaker=brk)
             st.session_state.last_nl = nl.strip()
-            st.session_state.parsed_note = parsed_note_of(req, pmeta)
+            st.session_state.parsed_rc = parsed_receipt_of(req, pmeta)
             st.session_state.rand_note = ''
             st.session_state.manual_dirty = False               # NL 回填不算手动配置
             st.session_state.last_parsed_req = req              # 记住条件：同句二连击确定性重解用
-            st.session_state.nl_src = f"一句话 · {PARSER_CN.get(pmeta['parser'], pmeta['parser'])}"
+            parser = PARSER_CN.get(pmeta['parser'], pmeta['parser'])
+            if pmeta.get('fallback'):
+                parser += ' · 离线兜底'
+            st.session_state.nl_src = f"一句话 · {parser}"
             # 快选条在按钮上方、本轮已实例化 → 回填点亮须走 pending + rerun（见本页顶部）
             st.session_state.pending_dirty = False
             st.session_state.pending_src = st.session_state.nl_src
@@ -358,12 +398,12 @@ with tab_meal:
             st.session_state.rand_note = (
                 f"{req['scenario']} · {req['B']:g}元 · {SPICE_LABEL[req['spice_max']]}"
                 + (f" · 忌{'/'.join(sorted(req['taboo']))}" if req['taboo'] else ''))
-            st.session_state.parsed_note = ''
+            st.session_state.parsed_rc = None
             do_solve_random(req)                        # 该随机条件下的解（缓存可复现）
         else:
             # 空输入+快选条动过，或同句+快选条动过 → 以快选条（+高级微调）为准，确定性解
             st.session_state.rand_note = ''
-            st.session_state.parsed_note = ''
+            st.session_state.parsed_rc = None
             do_solve(manual_req(), src=SRC_QUICK)
 
     if not has_text:
@@ -386,10 +426,18 @@ with tab_meal:
         st.markdown(H.hint_html('💡 这句话已经听懂过了；再点「一键配饭」会按已听懂的条件原样重配一遍'
                                 '（结果可复现，缓存命中秒出，不走随机）。'), unsafe_allow_html=True)
 
-    if st.session_state.parsed_note:
-        st.markdown(parsed_chips_html(st.session_state.parsed_note), unsafe_allow_html=True)
+    # 三色听懂回执：✅ 你说的 / 📌 我先默认的（点按钮跳高级微调）/ 🙁 管不了的（无则整行不显示）
+    rc = st.session_state.parsed_rc
+    if rc:
+        rc_html = H.heard_receipt_html(rc)
+        if rc_html:
+            st.markdown(rc_html, unsafe_allow_html=True)
+            if rc.get('dflt') and st.button('🎛️ 默认项不合意？点这里去微调', key='jump_tune'):
+                st.session_state.tune_open = True
+                st.rerun()
 
-    with st.expander('🎛️ 高级微调（时段 / 时间 / 位置 / 懒人）'):
+    with st.expander('🎛️ 高级微调（时段 / 时间 / 位置 / 懒人）',
+                     expanded=bool(st.session_state.pop('tune_open', False))):
         c1, c2 = st.columns(2)
         c1.selectbox('时段', ['午 餐', '早 餐', '下午 餐', '晚 餐', '夜宵 餐'], key='period',
                      on_change=mark_manual)
@@ -468,7 +516,7 @@ with tab_meal:
                     st.session_state.pending_req = nl_agent.sanitize(r)
                     st.session_state.pending_dirty = True
                     st.session_state.pending_src = f"一键重试 · 预算 {float(fail_req['B']):g}→{r['B']:g} 元"
-                    st.session_state.parsed_note = ''
+                    st.session_state.parsed_rc = None
                     st.rerun()
                 if can_taboo and retry_cols[1].button('🥬 去掉忌口重试', key='retry_taboo',
                                                       use_container_width=True):
@@ -477,7 +525,7 @@ with tab_meal:
                     st.session_state.pending_req = nl_agent.sanitize(r)
                     st.session_state.pending_dirty = True
                     st.session_state.pending_src = '一键重试 · 去掉忌口'
-                    st.session_state.parsed_note = ''
+                    st.session_state.parsed_rc = None
                     st.rerun()
                 tips = []
                 if can_budget:

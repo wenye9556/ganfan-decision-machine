@@ -70,6 +70,10 @@ CASES = [
     ('晚上12点饿了', dict(period='晚', asof='23:59')),           # 午夜口径
     ('夜里11点半叫外卖', dict(period='夜宵', asof='23:30')),    # 就近锚点 21:30 → 夜宵
     ('没说时间随便吃', dict(period='午', asof='12:30')),         # 没说钟点 → 行为不变
+    # —— ④' 中文数字钟点（晚上八点 / 上午十一点半）+ 小数点防误判 ——
+    ('晚上八点吃夜宵', dict(period='夜宵', asof='20:00')),
+    ('上午十一点半下课去吃饭', dict(period='午', asof='11:30')),
+    ('减脂，18块，不吃香菜，晚上八点', dict(scenario='减脂', B=18, taboo={'香菜'}, period='晚', asof='20:00')),
     # —— ⑤ 辣度/懒人/锚点 ——
     ('不能吃辣，来点清淡的', dict(spice_max=0, scenario='均衡')),
     ('微辣就好', dict(spice_max=1)),
@@ -125,7 +129,34 @@ def run():
     assert r['scenario'] == '减脂' and r['B'] == 18 and r['taboo'] == {'猪'} \
         and r['period'] == '晚' and r['asof'] == '19:30' and r['spice_max'] == 1 and r['lazy'], r
     passed += 1
-    print(f'NL 回归电池: {passed} 全过 ✓ / {failed} 失败（共 {len(CASES) + 1} 例）')
+
+    # —— origin 字段来源（三色回执数据源）：强制无 Key 走规则通道，杜绝环境变量干扰 ——
+    _no_llm = nl_agent.OpenAILLM(api_key='')
+    # 「减脂，18块，不吃香菜，晚上八点」→ user：场景/预算/忌口/时段/钟点；default：位置（+辣度/懒人）
+    req, pmeta = nl_agent.parse('减脂，18块，不吃香菜，晚上八点', llm=_no_llm)
+    o = pmeta['origin']
+    assert pmeta['parser'] == 'rule' and not pmeta.get('fallback'), pmeta
+    assert req['scenario'] == '减脂' and req['B'] == 18 and req['taboo'] == {'香菜'} \
+        and req['period'] == '晚' and req['asof'] == '20:00', req
+    for f in ('scenario', 'B', 'period', 'asof', 'taboo'):
+        assert o[f] == 'user', f'{f} 应为 user: {o}'
+    assert o['anchor'] == 'default', f'位置应为 default: {o}'
+    assert set(o) == set(nl_agent.ORIGIN_FIELDS), o
+    passed += 1
+    # 全默认句（无任何命中的裸问句）→ 所有字段 default
+    _r2, _m2 = nl_agent.parse('3楼食堂有什么好吃的', llm=_no_llm)
+    assert all(v == 'default' for v in _m2['origin'].values()), _m2['origin']
+    passed += 1
+    # 葱姜蒜闭集外忌口：如实交出到 unsupported、绝不硬猜进 taboo
+    _r3, _m3 = nl_agent.parse('不吃葱姜蒜，18块', llm=_no_llm)
+    assert _r3['taboo'] == set() and _m3['unsupported'] == ['葱姜蒜'], (_r3, _m3)
+    _r4, _m4 = nl_agent.parse('不要香菜和蒜', llm=_no_llm)
+    assert _r4['taboo'] == {'香菜'} and _m4['unsupported'] == ['蒜'], (_r4, _m4)
+    # 肯定句不误报：『我想吃葱油拌面』没有忌口语义
+    _r5, _m5 = nl_agent.parse('我想吃葱油拌面，18块', llm=_no_llm)
+    assert _r5['taboo'] == set() and _m5['unsupported'] == [], (_r5, _m5)
+    passed += 1
+    print(f'NL 回归电池: {passed} 全过 ✓ / {failed} 失败（共 {len(CASES) + 4} 例）')
     return failed
 
 
