@@ -36,6 +36,10 @@ UI = os.path.join(ROOT, 'video/public/assets/ui')
 IMGS = {n: img64(os.path.join(UI, n + '.png')) for n in
         ['home', 'nl_input', 'plan1', 'plan2', 'plan3', 'week', 'comments', 'honest',
          'result_full', 'random_flow']}
+# BP 专用裁剪副本：界面速览三格只展示目标内容（输入框 / 第1套卡 / 评价条目）
+BPSHOT = os.path.join(ROOT, 'bp', 'shots')
+for n in ('bp_input', 'bp_result', 'bp_comments'):
+    IMGS[n] = img64(os.path.join(BPSHOT, n + '.png'))
 
 PHOTO = 'data:image/jpeg;base64,' + base64.b64encode(
     open(os.path.join(ROOT, 'B区食堂/B-W01_土耳其烤肉.jpg'), 'rb').read()).decode()
@@ -350,9 +354,9 @@ page(f"""
 营养为估算级（麦当劳公示级）；评论为预置样例。</div>
 <h3>界面速览</h3>
 <div class="grid3">
-<div><img class="shot-sm" src="{IMGS['nl_input']}"><p class="small">一句话输入：口语直接说，chips 即时回显</p></div>
-<div><img class="shot-sm" src="{IMGS['result_full']}"><p class="small">完整结果页：三套方案 + 解释 + 营养小标签</p></div>
-<div><img class="shot-sm" src="{IMGS['comments']}"><p class="small">窗口评价样例（预置内容，非真实用户数据）</p></div>
+<div><img class="ui-shot" src="{IMGS['bp_input']}"><p class="small">一句话输入：口语直接说，条件自动解析</p></div>
+<div><img class="ui-shot" src="{IMGS['bp_result']}"><p class="small">结果页：整餐菜品明码标价 + 营养四宫格</p></div>
+<div><img class="ui-shot" src="{IMGS['bp_comments']}"><p class="small">窗口评价样例（预置内容，非真实用户数据）</p></div>
 </div>
 """, no=8)
 

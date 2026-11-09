@@ -547,13 +547,13 @@ def _decorate(plans, sc):
         p['tag'] = labels[bars.index(max(bars))]
 
 
-def random_recommend(bundle, req, n=3, seed=None, exclude=()):
+def random_recommend(bundle, req, n=3, seed=None, exclude=(), history=()):
     """随机配：随机化偏好权重（口味/营养/价格主轴）多次求解，从解空间抽样 n 套方案。
     硬约束（预算/忌口/营养带/售罄/耗时）与主流程完全一致，只随机化目标权重。
-    exclude：上一轮展示过的方案（菜名集合列表）——重叠判定拒收：与任一 exclude 方案
-    共享菜品数 ≥ ceil(本方案菜品数/2) 即视为"同一类餐"跳过，保证每次点都换新。
-    总时限熔断（RANDOM_TIME_BUDGET≈6s）：到点即停返回已抽到的方案，绝不让演示干等；
-    同 seed 时抽样序列确定（熔断仅在机器过慢时截断，正常不触发）。"""
+    exclude：上一次展示 / 近 7 天吃过的方案（菜名集合）——差异 <2 道菜即拒（不误杀米饭配菜）。
+    history：本次会话已展示过的方案（含窗口）——两级判据：先严格（与历史差异 <2 道即拒），
+    后半轮次降级（只拒完全同名）；每轮以 70% 概率 ban 一个历史高频窗口，把求解推向别的窗口。
+    总时限熔断（RANDOM_TIME_BUDGET≈10s）：到点即停返回已抽到的方案。"""
     import random as _random
     rng = _random.Random(seed)
     t0 = time.time()
@@ -570,19 +570,32 @@ def random_recommend(bundle, req, n=3, seed=None, exclude=()):
     # 相位探测：严格可解才用「不放宽」阶段，否则直接走放宽阶梯（与主流程同规则）
     probe = build(bundle, req, scen, alive, sc, tuple(scen['w']), 'B', 1, ctx=ctx)
     phase = 1 if solve_m(probe) == 'Optimal' else 2
-    plans, seen = [], set()
+    plans, seen, rejected = [], set(), set()
+    soft = []                                                 # 仅被"严格历史判据"拒的方案，留作补位
     excl_names = [set(s) for s in exclude]
+    hist = [dict(names=set(h.get('names', [])), wins=set(h.get('wins', []))) for h in history]
+    win_list = sorted({w2 for h in hist for w2 in h['wins']})
+    n_wins_alive = len({d['window'] for d in alive})          # 可用窗口数（ban 不能把窗口封死）
+    rounds = min(n * RC['ROUNDS_PER_N'], RC['ROUNDS_CAP'])
+    strict_until = max(3, rounds // 2)                       # 前半严格判据，后半降级
 
     def _done():
+        # 补位兜底：严格判据下凑不满时，用"只与历史部分重叠"的合法方案补足（硬约束不变）
+        if len(plans) < n:
+            for q in soft:
+                if len(plans) >= n:
+                    break
+                if q['sig'] in seen:
+                    continue
+                seen.add(q['sig']); plans.append(q)
         _decorate(plans, sc)
         return dict(top3=plans[:n], pool=[], alive=len(alive),
                     elapsed=round(time.time() - t0, 2), scen=scen)
 
-    for rnd in range(min(n * RC['ROUNDS_PER_N'], RC['ROUNDS_CAP'])):
+    for rnd in range(rounds):
         if time.time() > deadline:
             break                                             # 总时限熔断：到点即停
         # 主轴定向采样 + 随机子集：极点权重决定"偏好方向"，随机剔除 15–40% 的菜
-        # 决定"今天先不看这些"——每次子问题不同，才能从大解空间里真正抽到不同的餐。
         main = rnd if rnd < 3 else rng.randint(0, 2)
         w = [rng.uniform(*RC['SIDE_W']) for _ in range(3)]
         w[main] = rng.uniform(*RC['MAIN_W'])
@@ -590,17 +603,27 @@ def random_recommend(bundle, req, n=3, seed=None, exclude=()):
         w = tuple(round(v / tot, 3) for v in w)
         cut = rng.uniform(*RC['CUT'])
         sub = [d for d in alive if rng.random() > cut]
+        # 跨窗口优先：每个历史窗口独立 70% 概率被 ban；上限同时受"历史一半"与"至少留 3 个窗口"约束
+        ban = {w2 for w2 in win_list if rng.random() < 0.7}
+        max_ban = max(0, min(len(win_list) // 2, n_wins_alive - 3))
+        if len(ban) > max_ban:
+            ban = set(rng.sample(sorted(ban), max_ban)) if max_ban else set()
         ch = 'B' if rnd % RC['A_EVERY'] else 'A'            # 每 A_EVERY 次尝试给一席自选通道
-        mdl = build(bundle, req, scen, sub, sc, w, ch, phase, ctx=ctx)
+        mdl = build(bundle, req, scen, sub, sc, w, ch, phase, ctx=ctx, ban_win_names=ban)
         if solve_m(mdl) not in ('Optimal', 'Integer Feasible'):
             continue
         mdl['sc_dims'] = sc['dims']
         p = extract(mdl, req, scen, ctx, ch)
-        if not p['items'] or p['sig'] in seen:
-            continue
-        half = math.ceil(len(p['names']) / 2)                 # 重叠判定：共享 ≥ 半数菜品即拒收
-        if any(len(p['names'] & s) >= half for s in excl_names):
-            continue
+        if not p['items'] or p['sig'] in seen or p['sig'] in rejected:
+            continue                                          # rejected 记忆：被拒解不重复计算
+        # 与上一轮/打卡：差异 <2 道菜即拒（硬性：近期吃过的不能重复）
+        if any(len(p['names'] ^ s) < 2 for s in excl_names):
+            rejected.add(p['sig']); continue
+        # 与本次会话历史：完全同名一律拒；严格阶段差异 <2 道也拒，后半降级
+        if any(p['names'] == h['names'] for h in hist):
+            rejected.add(p['sig']); continue
+        if rnd < strict_until and any(len(p['names'] ^ h['names']) < 2 for h in hist):
+            soft.append(p); rejected.add(p['sig']); continue  # 留作补位，不再重复采样
         seen.add(p['sig']); plans.append(p)
         if len(plans) >= n:
             break

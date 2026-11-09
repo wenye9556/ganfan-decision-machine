@@ -136,13 +136,13 @@ PRM:                       # —— 全局标量/列表（原 core.py PRM 字典
     source: 工程提速（任务书 2026-11：大池单请求 ≤5s）；线程池并发独立 CBC 子进程，每进程单线程
     calibrated: 规格约定（硬门槛：R1–R4 Top3 签名与提速前完全一致）
   RANDOM_TIME_BUDGET:
-    value: 6.0
+    value: 10.0
     source: 工程规格（任务书 2026-11：random_recommend 总时限熔断约 6s）
     calibrated: 规格约定
   RANDOM:                    # 随机配（摇一摇）解空间采样旋钮
     value:
       ROUNDS_PER_N: 6          # 最多尝试轮数 = min(n×ROUNDS_PER_N, ROUNDS_CAP)
-      ROUNDS_CAP: 12
+      ROUNDS_CAP: 24
       A_EVERY: 3               # 每 A_EVERY 轮给一席自选通道（A）
       MAIN_W: [0.85, 0.98]     # 主轴权重均匀采样区间
       SIDE_W: [0.02, 0.06]     # 次轴权重均匀采样区间

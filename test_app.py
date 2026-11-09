@@ -31,11 +31,11 @@ import core as _core
 _orig_rr = _core.random_recommend
 
 
-def _stable_random_recommend(bundle, req, n=3, seed=None, exclude=()):
+def _stable_random_recommend(bundle, req, n=3, seed=None, exclude=(), history=()):
     ex = {tuple(sorted(e)) for e in exclude}
     best = None
     for s in range(1, 41):
-        r = _orig_rr(bundle, req, n=n, seed=s, exclude=exclude)
+        r = _orig_rr(bundle, req, n=n, seed=s, exclude=exclude, history=history)
         sigs = {tuple(sorted(p['names'])) for p in r.get('top3', [])}
         if not (sigs & ex):
             if len(r.get('top3', [])) == n:
@@ -43,7 +43,7 @@ def _stable_random_recommend(bundle, req, n=3, seed=None, exclude=()):
             if best is None or len(r.get('top3', [])) > len(best.get('top3', [])):
                 best = r
     return best if best and best.get('top3') else _orig_rr(
-        bundle, req, n=n, seed=None, exclude=exclude)
+        bundle, req, n=n, seed=None, exclude=exclude, history=history)
 
 
 _core.random_recommend = _stable_random_recommend

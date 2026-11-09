@@ -60,7 +60,8 @@ pc = get_cache()
 
 for k, v in dict(req=None, res=None, reasons=[], meta=None, last_nl='', parsed_note='',
                 rand_note='', last_parsed_req=None, manual_dirty=False,
-                req_src='', nl_src='', pick_mode='fixed', avoid_n=0, challenge=None).items():
+                req_src='', nl_src='', pick_mode='fixed', avoid_n=0, challenge=None,
+                plan_history=[]).items():
     st.session_state.setdefault(k, v)
 for k, v in dict(scen='均衡', budget=18, period='午 餐', asof='12:30', anchor='图书馆',
                  spice=2, lazy=False).items():
@@ -73,6 +74,17 @@ def clear_cheats():
     """清空「算放纵餐」勾选：任何新一批方案上线前调用（del 不受实例化限制）。"""
     for i in range(3):
         st.session_state.pop(f'cheat_{i}', None)
+
+
+def remember_plans(res, reset=False):
+    """把本批方案记入本次会话历史（最多 30 套），供「再换一批」判重与跨窗口优先。
+    reset=True：一键配饭 = 新一轮配饭起点，历史重置为本次三套（换一批则继续累积）。"""
+    if not res:
+        return
+    hist = [] if reset else st.session_state.plan_history
+    for p in res.get('top3', []):
+        hist.append(dict(names=sorted(p['names']), wins=sorted(p['wins']), sig=str(p['sig'])))
+    st.session_state.plan_history = hist[-30:]
 
 
 def recent_avoid(days=7):
@@ -105,6 +117,7 @@ def do_solve(req, avoid=None, src=None):
     st.session_state.pick_mode = 'fixed'
     st.session_state.avoid_n = len(avoid)
     st.session_state.challenge = None
+    remember_plans(res, reset=True)
     if src is not None:
         st.session_state.req_src = src
 
@@ -123,9 +136,11 @@ def do_solve_random(req):
         st.session_state.reasons = ent['reasons']
         st.session_state.meta = dict(hit=True, elapsed=0.0, key=C.req_key(req, origin='random'))
         clear_cheats()
+        remember_plans(ent["res"], reset=True)
         return
     with st.spinner('正在随机抽条件、配三套…'):
-        rres = core.random_recommend(bundle, req, n=3, exclude=recent_avoid())
+        rres = core.random_recommend(bundle, req, n=3, exclude=recent_avoid(),
+                                     history=st.session_state.plan_history)
     if not rres.get('top3'):
         do_solve(req)                       # 采样不出 → 走完整求解（含放宽阶梯）
         return
@@ -135,6 +150,7 @@ def do_solve_random(req):
     st.session_state.reasons = reasons
     st.session_state.meta = dict(hit=False, elapsed=rres['elapsed'], key=C.req_key(req, origin='random'))
     clear_cheats()
+    remember_plans(rres, reset=True)
     pc.put(req, rres, reasons, origin='random')
 
 
@@ -298,14 +314,14 @@ with tab_meal:
                 unsafe_allow_html=True)
     qs1, qs2 = st.columns(2)
     with qs1:
-        st.markdown(f'<div class="qb-row"><span class="qb-lab">场景</span>'
+        st.markdown(f'<div class="qb-row qb-duo"><span class="qb-lab">场景</span>'
                     f'<span class="qb-val">{SCEN_EMOJI[scen_now]} {scen_now}</span></div>',
                     unsafe_allow_html=True)
         st.select_slider('场景', options=SCEN_OPTS, key='scen', on_change=mark_manual,
                          format_func=lambda s: f'{s}{SCEN_EMOJI[s]}', label_visibility='collapsed')
         st.markdown(ticks_html(SCEN_OPTS, SCEN_OPTS.index(scen_now)), unsafe_allow_html=True)
     with qs2:
-        st.markdown(f'<div class="qb-row"><span class="qb-lab">辣度</span>'
+        st.markdown(f'<div class="qb-row qb-duo"><span class="qb-lab">辣度</span>'
                     f'<span class="qb-val">🌶️ {SPICE_LABEL[spice_now]}</span></div>',
                     unsafe_allow_html=True)
         st.select_slider('辣度', options=SPICE_OPTS, key='spice', on_change=mark_manual,
@@ -488,8 +504,10 @@ with tab_meal:
             if st.button('🎲 再换一批（随机重挑三套）', key='reshuffle'):
                 with st.spinner('正在重新挑三套…'):
                     preq = st.session_state.req or manual_req()
-                    rres = core.random_recommend(bundle, preq, n=3,
-                                                 exclude=[set(p['names']) for p in tops] + recent_avoid())
+                    rres = core.random_recommend(
+                        bundle, preq, n=3,
+                        exclude=[set(p['names']) for p in tops] + recent_avoid(),
+                        history=st.session_state.plan_history)
                 if rres.get('top3'):
                     st.session_state.res = rres
                     st.session_state.reasons = [nl_agent.rule_explain(preq, p) for p in rres['top3']]
@@ -497,6 +515,7 @@ with tab_meal:
                     st.session_state.pick_mode = 'reshuffle'     # 小票④：同条件随机换的一批
                     st.session_state.challenge = None
                     clear_cheats()                       # 新一批方案上线：放纵餐勾选作废
+                    remember_plans(rres)
                     st.rerun()
                 else:
                     st.toast('这批条件采样不出新的三套，调调预算或忌口再来')

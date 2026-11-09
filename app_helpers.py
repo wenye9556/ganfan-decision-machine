@@ -65,6 +65,11 @@ body{ overflow-x:hidden; }
 [data-testid="stMarkdownContainer"]:has(> .hint),
 [data-testid="stMarkdownContainer"]:has(> .ask-row),
 [data-testid="stMarkdownContainer"]:has(> .stat-grid){ margin-bottom:0 !important; }
+/* 快选条逐行 HTML：同样要归零，否则每行被吞 15px 高、与下方滑杆/刻度叠压 */
+[data-testid="stMarkdownContainer"]:has(> .qb-head),
+[data-testid="stMarkdownContainer"]:has(> .qb-row),
+[data-testid="stMarkdownContainer"]:has(> .qb-ends),
+[data-testid="stMarkdownContainer"]:has(> .qb-ticks){ margin-bottom:0 !important; }
 [data-testid="stMarkdownContainer"]:has(> .hint){ padding-bottom:3px; }
 [data-testid="stMainBlockContainer"]::after{
   content:"干饭决策机 · 数据实地采集 · 打卡仅存本机";
@@ -302,7 +307,24 @@ div[data-testid="stElementContainer"]:has([data-testid="stRadio"]){ width:100% !
   content:''; position:absolute; left:50%; bottom:-5px; transform:translateX(-50%);
   width:4px; height:4px; border-radius:50%; background:#E07A3F;
 }
-.qb-row-chips{ margin-top:7px; }
+.qb-row-chips{ margin-top:8px; margin-bottom:1px; }
+
+/* 场景 / 辣度 双列：每列一张内嵌小卡（标签在上 → 滑杆居中 → 刻度在下），
+   列与列之间留 9px 米色空隙 + 1px 描边，刻度网格被列宽夹住，不会与另一列混行 */
+div[data-testid="stHorizontalBlock"]:has(.qb-duo){
+  gap:9px !important; align-items:stretch; margin-top:2px;
+}
+div[data-testid="stHorizontalBlock"]:has(.qb-duo) > div[data-testid="stColumn"]{
+  min-width:0 !important; padding:7px 10px 7px;
+  background:linear-gradient(180deg,#FFFDF9 0%,#FFF8EF 100%);
+  border:1px solid #F3E3CE; border-radius:14px;
+  box-shadow:0 2px 6px -5px rgba(150,90,40,.55);
+}
+div[data-testid="stHorizontalBlock"]:has(.qb-duo) > div[data-testid="stColumn"] > div[data-testid="stVerticalBlock"]{
+  gap:4px;
+}
+div[data-testid="stHorizontalBlock"]:has(.qb-duo) .qb-row{ margin:0; }
+div[data-testid="stHorizontalBlock"]:has(.qb-duo) .qb-ticks{ margin-top:-1px; padding:0 2px; }
 
 /* slider —— 快选条滑杆：暖橙大 thumb / 奶油轨道，档位标签用自绘 .qb-ticks（默认刻度与气泡隐藏） */
 [data-testid="stSlider"]{ margin:0; }
@@ -340,9 +362,22 @@ div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child
 /* 隐藏原生勾选框与 input（1.50 DOM：label 首子元素是方框 span，其后是隐藏 input） */
 div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label > span:first-child,
 div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label > input{ display:none !important; }
+/* 文字居中修正：方框 span 虽已隐藏，BaseWeb 仍在文字外层 div 上保留 7.5px 左内边距（勾选框占位），
+   使文字整体右偏 3.75px —— 把这段占位改成左右各 3.75px 对称内边距（药丸总宽不变），
+   再由 flex + text-align 双保险居中 */
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label > div{
+  padding:0 3.75px !important;      /* 7.5px 占位左右均分：文字回到正中，药丸总宽与原设计一致 */
+  display:flex !important; justify-content:center !important;
+}
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label > div > div[data-testid="stWidgetLabel"]{
+  display:flex !important; justify-content:center !important;
+}
 div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label p{
   font-size:11px !important; font-weight:700; color:#8A6A50 !important;
   white-space:nowrap; margin:0; line-height:1.3; text-align:center;
+  /* CJK 字形在 1.3 行高里视觉重心偏上约 1.75px：p 加 3.5px 上内边距，flex 居中会把盒子重新居中，
+     字形随内边距下移 1.75px（盒子中心不动，chips 外框尺寸不变） */
+  padding:3.5px 0 0 !important;
 }
 div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label:has(input:checked){
   background:linear-gradient(135deg,#F59A55 0%,#E07A3F 55%,#D06A30 100%) !important;
@@ -646,6 +681,8 @@ div[data-testid="stCaptionContainer"]{ color:#A8917B; }
   font-size:9.5px; color:#3B5C9E; background:#EDF1FA;
   border-radius:6px; padding:1px 5px; flex:0 0 auto; font-weight:700;
 }
+.d-w-set{ color:#3E7D32; background:#E7F4E4; }
+.d-p{ font-size:10.5px; color:#C0642B; font-weight:800; flex:0 0 auto; white-space:nowrap; }
 .d-g{ font-size:11.5px; color:#9C8470; font-weight:800; white-space:nowrap; }
 .tier-line{
   display:flex; gap:6px; align-items:center;
@@ -747,9 +784,14 @@ div[data-testid="stElementContainer"]:has(.meal-card) + div[data-testid="stLayou
   .qb-row .qb-bval{ font-size:20px; }
   .qb-ticks{ padding:0 8px; }
   .qb-ticks span{ font-size:9.5px; }
+  /* 场景 / 辣度：手机上改回上下堆叠，各占满宽，保证滑杆与刻度不挤 */
+  div[data-testid="stHorizontalBlock"]:has(.qb-duo){ flex-direction:column !important; gap:8px !important; }
+  div[data-testid="stHorizontalBlock"]:has(.qb-duo) > div[data-testid="stColumn"]{
+    width:100% !important; flex:0 0 auto !important; padding:7px 11px 7px;
+  }
   div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)){ gap:4px !important; }
   div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label{ min-height:32px; padding:5px 0; }
-  div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label p{ font-size:10.5px !important; }
+  div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(8)) div[data-testid="stCheckbox"] label p{ font-size:10.5px !important; padding-top:2.5px !important; }  /* 10.5px 字号下字形偏心更小，补偿同样按比例收紧 */
 
   /* 方案卡操作行：手机上保持两按钮并排 + 放纵餐整行 */
   div[data-testid="stElementContainer"]:has(.meal-card) + div[data-testid="stLayoutWrapper"] [data-testid="stHorizontalBlock"]{
@@ -930,18 +972,42 @@ def hint_html(text):
 def plan_card(p, reason, idx):
     status_cls = {'推荐': 'pill-ok', '放宽版': 'pill-soft', '建议': 'pill-hard'}.get(p['status'], 'pill-soft')
     self_pill = '<span class="pill pill-self">按克自选</span>' if p['label'] == '自选' else ''
+    tier = p.get('tier')
+
+    def _dish_tag(it):
+        """只标「套餐」（套餐档位内的菜）；加菜/普通菜不标标签，改为行尾显示单价。"""
+        if tier and it['pricing'] == '套餐':
+            return '<span class="d-w d-w-set">套餐</span>'
+        return '<span class="d-w">称重</span>' if it['pricing'] == '称重' else ''
+
+    def _dish_price(it):
+        """行尾单价：套餐内菜不单标价（价格在档位行），其余菜显示各自的实付价。"""
+        if tier and it['pricing'] == '套餐':
+            return ''
+        price = it.get('price')
+        if price is None:
+            return ''
+        return f'<span class="d-p">¥{price:g}</span>'
+
     dishes = ''.join(
         f'<div class="dish"><span class="d-e">{dish_emoji(it["name"], it.get("cat"))}</span>'
         f'<span class="d-n">{it["name"]}</span>'
-        + ('<span class="d-w">称重</span>' if it['pricing'] == '称重' else '')
+        + _dish_tag(it)
+        + _dish_price(it)
         + f'<span class="d-g">{it["grams"]:g}g</span></div>'
         for it in p['items'])
-    tier = ''
-    if p.get('tier'):
-        t = p['tier']
+    tier_html = ''
+    if tier:
+        t = tier
         rice = f' · 含米饭{t["rice_g"]:g}g' if t['mode'] in ('含米饭', '米饭+1元') else ''
-        tier = (f'<div class="tier-line"><span>🍱</span><span>{t["n_meat"]}荤{t["n_veg"]}素档 '
-                f'{t["price"]:g}元{rice}</span></div>')
+        extras = [it for it in p['items'] if it['pricing'] != '套餐']
+        extra_txt = ''
+        if extras:
+            names = '、'.join(it['name'] for it in extras)
+            extra_wins = '、'.join(sorted({it['win'] for it in extras}))
+            extra_txt = f' ｜ 加菜：{names}（{extra_wins}）'
+        tier_html = (f'<div class="tier-line"><span>🍱</span><span>{t["n_meat"]}荤{t["n_veg"]}素档 '
+                     f'{t["price"]:g}元{rice}{extra_txt}</span></div>')
     relax = ''
     if p.get('relax'):
         cn = {'槽_主': '主食', '槽_荤': '荤菜', '槽_素': '素菜', '热量下': '热量下限', '热量上': '热量上限',
@@ -975,7 +1041,7 @@ def plan_card(p, reason, idx):
    <div class="mc-l2">📍<span>{p['cant'][0] if p.get('cant') else '校内'}</span></div></div>
   {tag_pill}</div>
  <div class="mc-wins">{wins}</div>
- <div class="mc-dishes">{dishes}</div>{tier}
+ <div class="mc-dishes">{dishes}</div>{tier_html}
  <div class="mc-stats">
   <div class="ms price"><span class="v">¥{p['PI']:g}</span><span class="k">价格</span></div>
   <div class="ms"><span class="v">{p['E']:g}<i>kcal</i></span><span class="k">热量</span></div>
