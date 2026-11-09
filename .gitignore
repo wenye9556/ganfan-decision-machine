@@ -13,3 +13,4 @@ tmp_ui/
 
 cache/plans.json.bak_*
 video/public/assets/gen/*.mp4
+.workbuddy/
