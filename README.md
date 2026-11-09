@@ -35,7 +35,9 @@ python engine/run_master.py     # 引擎冒烟 + 17 类断言电池（全绿/确
 
 ## 二、在线体验（Streamlit Community Cloud）
 
-部署方式（仓库已含全部依赖与数据，部署后回填链接）：
+**在线体验：https://ganfan-decision-machine-antjlgqtxbdzcietke4him.streamlit.app**（浏览器直接打开，无需账号）
+
+部署方式（仓库已含全部依赖与数据）：
 
 1. 将本目录推送到 GitHub（注意：主表 xlsx 需一并提交，约 125KB）。
 2. https://share.streamlit.io → New app → 选择仓库，Main file path = `app.py`。
@@ -116,7 +118,7 @@ Windows 一键启动应用：双击 `start.bat`（自动停旧实例、启动 St
 
 ## 七、提交清单（MINMAX 黑客松）
 
-- [x] 可登录试用作品：Streamlit 链接（部署后回填）+ 本 README 运行说明，无需测试账号
+- [x] 可登录试用作品：Streamlit 链接 https://ganfan-decision-machine-antjlgqtxbdzcietke4him.streamlit.app + 本 README 运行说明，无需测试账号
 - [x] 演示视频 ≤3 分钟 MP4 <300M：邮件附件版 `video/out/干饭决策机_演示.mp4`
       （122.3s / 1080p30 / 12.92MB / 中文旁白 + 同步逐字字幕）；
       高清母片 `video/out/ganfan.mp4`（122.2s / 50.2MB）存档备用

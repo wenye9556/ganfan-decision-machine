@@ -21,7 +21,7 @@
 排队只在懒人模式计入）。
 
 ① 可登录试用作品
-   体验链接：【Streamlit Community Cloud 链接，部署后回填】
+   体验链接：https://ganfan-decision-machine-antjlgqtxbdzcietke4him.streamlit.app
    运行说明：见附件 README.md（pip install -r requirements.txt → streamlit run app.py）
    测试账号：无需账号，打开即用（云端演示环境为临时存储）
    建议试玩：输入"减脂，18块，不吃香菜"→ 三套方案 → 打卡 → 周报热力图；
@@ -54,11 +54,11 @@
 - [x] 作品体现核心链路：用户输入 → AI Agent 理解、执行并调用工具 → 输出
       （`engine/nl_agent.py`：parse（LLM/规则双通道）→ core.recommend → explain；
        UI「一键配饭」一键触发，chips 展示解析结果与解析来源，全程可视）
-- [x] 可登录试用作品：体验链接（部署后回填）+ 运行说明 + 无需测试账号
+- [x] 可登录试用作品：体验链接 https://ganfan-decision-machine-antjlgqtxbdzcietke4him.streamlit.app + 运行说明 + 无需测试账号
 - [x] 视频 ≤3 分钟：**122.3 秒**（容器时长；七幕，画面 3666 帧 @30fps）
 - [x] 视频 MP4 <300M：**12.92MB**；1080p；中文旁白 + 同步逐字高亮字幕（edge-tts，字级时间轴）
 - [x] BP PDF <10M：**3.14MB / 11 页**，含项目名/团队/痛点/方案/功能/AI技术/Demo/价值/商业模式/规划
-- [ ] 部署：推 GitHub → share.streamlit.io 部署 app.py → 回填体验链接（本文件、README、BP 第 7 页）
+- [x] 部署：已上线 https://ganfan-decision-machine-antjlgqtxbdzcietke4him.streamlit.app（本文件、README、BP 第 7 页均已回填）
 - [ ] 提交动作：回填负责人姓名/电话 → **先给自己发一封测试邮件验证附件可收** → 正式发送
 - [ ] 决赛（11 月下旬）：PPT + Demo + 产品体验（BP 与视频素材可复用）
 

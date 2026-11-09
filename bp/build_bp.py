@@ -332,7 +332,7 @@ page(f"""
 page(f"""
 <h2>07 · Demo 说明（评委 10 秒可用）</h2>
 <h3>在线体验</h3>
-<p><span class="tag">待回填</span><b>在线体验：</b>部署后回填（提交邮件附链接）；<b>本地运行：</b>3 条命令见下方 / README。<br>
+<p><span class="tag">已上线</span><b>在线体验：</b>https://ganfan-decision-machine-antjlgqtxbdzcietke4him.streamlit.app（无需注册，打开即用）；<b>本地运行：</b>3 条命令见下方 / README。<br>
 无需注册、无需测试账号，打开即用；打卡记录仅保存本机。</p>
 <h3>本地运行（3 条命令）</h3>
 <div class="card"><p style="margin:0">
